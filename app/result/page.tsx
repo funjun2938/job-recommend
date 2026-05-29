@@ -21,6 +21,8 @@ import { TrendingSkills } from '@/components/result/TrendingSkills'
 import { PeerMoves } from '@/components/result/PeerMoves'
 import { CompanyInsightTeaser } from '@/components/result/CompanyInsightTeaser'
 import { ResumeBuilder } from '@/components/result/ResumeBuilder'
+import { JobTimeline } from '@/components/result/JobTimeline'
+import { DataPrivacyBadge } from '@/components/result/DataPrivacyBadge'
 import { Heart } from 'lucide-react'
 import type { AnalysisResult, Stage1Data, Stage2Data } from '@/lib/types'
 
@@ -204,7 +206,12 @@ export default function ResultPage() {
           </FadeIn>
         )}
 
-        {/* ⑫ 공유 카드 */}
+        {/* ⑫ 채용 캘린더 */}
+        <FadeIn delay={0.44}>
+          <JobTimeline />
+        </FadeIn>
+
+        {/* ⑫b 공유 카드 */}
         {stage1 && (
           <SlideUp delay={0.45}>
             <ShareCard result={result} stage1={stage1} />
@@ -214,6 +221,11 @@ export default function ResultPage() {
         {/* ⑬ 알림 신청 */}
         <FadeIn delay={0.48}>
           <AlertSignup stage1={stage1} />
+        </FadeIn>
+
+        {/* 데이터 보호 배지 */}
+        <FadeIn delay={0.58}>
+          <DataPrivacyBadge />
         </FadeIn>
 
         {/* ⑭ 이력서 빌더 */}
