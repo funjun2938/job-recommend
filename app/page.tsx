@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, CheckCircle2, Lock, Sparkles, TrendingUp, Shield, Star } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Lock, Sparkles, TrendingUp, Shield, Star, Zap } from 'lucide-react'
 import { SocialProof } from '@/components/landing/SocialProof'
 
 const TESTIMONIALS = [
@@ -19,9 +19,12 @@ export default function HomePage() {
             <TrendingUp size={16} className="text-white" />
           </div>
           <span className="font-bold text-gray-900">이직추천</span>
-          <span className="ml-auto text-xs bg-emerald-50 text-emerald-600 font-semibold px-2 py-0.5 rounded-full">
-            Beta
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <Link href="/pricing" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
+              <Zap size={11} /> Pro
+            </Link>
+            <Link href="/dashboard" className="text-xs text-gray-400 font-medium">대시보드</Link>
+          </div>
         </div>
 
         {/* 메인 카피 */}
