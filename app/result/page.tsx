@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Share2, Info } from 'lucide-react'
+import { ChevronLeft, Share2, Info, FileText } from 'lucide-react'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { toast } from 'sonner'
 import { FadeIn, SlideUp, ScaleIn } from '@/components/result/FadeIn'
 import { DiagnosisCard } from '@/components/result/DiagnosisCard'
@@ -72,9 +73,12 @@ export default function ResultPage() {
             <ChevronLeft size={22} />
           </button>
           <span className="font-bold text-gray-900 text-sm">이직 분석 결과</span>
-          <button onClick={handleShare} className="p-2 -mr-2 text-gray-400 active:text-gray-700">
-            <Share2 size={18} />
-          </button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <button onClick={handleShare} className="p-2 text-gray-400 active:text-gray-700">
+              <Share2 size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -189,6 +193,25 @@ export default function ResultPage() {
         {/* ⑬ 알림 신청 */}
         <FadeIn delay={0.48}>
           <AlertSignup stage1={stage1} />
+        </FadeIn>
+
+        {/* ⑭ 자기소개서 생성 배너 */}
+        <FadeIn delay={0.5}>
+          <Link
+            href="/cover-letter"
+            className="flex items-center gap-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 text-white active:opacity-80 transition-opacity"
+          >
+            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+              <FileText size={22} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-black text-base">AI 자기소개서 자동 작성</p>
+              <p className="text-indigo-200 text-xs mt-0.5">
+                분석 결과로 맞춤 자소서 4개 문항을 즉시 생성
+              </p>
+            </div>
+            <ChevronLeft size={20} className="rotate-180 text-indigo-300 flex-shrink-0" />
+          </Link>
         </FadeIn>
 
       </div>
