@@ -20,6 +20,8 @@ import { ShareCard } from '@/components/result/ShareCard'
 import { TrendingSkills } from '@/components/result/TrendingSkills'
 import { PeerMoves } from '@/components/result/PeerMoves'
 import { CompanyInsightTeaser } from '@/components/result/CompanyInsightTeaser'
+import { ResumeBuilder } from '@/components/result/ResumeBuilder'
+import { Heart } from 'lucide-react'
 import type { AnalysisResult, Stage1Data, Stage2Data } from '@/lib/types'
 
 export default function ResultPage() {
@@ -27,8 +29,9 @@ export default function ResultPage() {
   const [result,  setResult]  = useState<AnalysisResult | null>(null)
   const [stage1,  setStage1]  = useState<Stage1Data | null>(null)
   const [stage2,  setStage2]  = useState<Stage2Data | null>(null)
-  const [skipped, setSkipped] = useState(false)
-  const [ready,   setReady]   = useState(false)
+  const [skipped,  setSkipped]  = useState(false)
+  const [ready,    setReady]    = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const stored  = sessionStorage.getItem('analysisResult')
@@ -46,12 +49,30 @@ export default function ResultPage() {
     } catch { router.replace('/analyze') }
   }, [router])
 
-  function handleShare() {
+  async function handleShare() {
+    // 영구 저장 URL 생성 (없으면 생성)
+    let url = shareUrl ?? window.location.href
+    if (!shareUrl && result && stage1) {
+      try {
+        const res = await fetch('/api/results', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ result, stage1 }),
+        })
+        const data = await res.json()
+        if (data.shareId) {
+          const generated = `${window.location.origin}/r/${data.shareId}`
+          setShareUrl(generated)
+          url = generated
+        }
+      } catch { /* 실패 시 현재 URL 사용 */ }
+    }
+
     if (navigator.share) {
-      navigator.share({ title: '내 이직 분석 결과', url: window.location.href })
+      navigator.share({ title: '내 이직 분석 결과', url })
     } else {
-      navigator.clipboard.writeText(window.location.href)
-      toast.success('링크가 복사됐어요!')
+      navigator.clipboard.writeText(url)
+      toast.success('공유 링크가 복사됐어요!')
     }
   }
 
@@ -195,7 +216,29 @@ export default function ResultPage() {
           <AlertSignup stage1={stage1} />
         </FadeIn>
 
-        {/* ⑭ 면접 질문 배너 */}
+        {/* ⑭ 이력서 빌더 */}
+        {stage1 && result && (
+          <FadeIn delay={0.5}>
+            <ResumeBuilder stage1={stage1} stage2={stage2} result={result} />
+          </FadeIn>
+        )}
+
+        {/* ⑮ 즐겨찾기 바로가기 */}
+        <FadeIn delay={0.52}>
+          <Link
+            href="/favorites"
+            className="flex items-center gap-3 bg-rose-50 border border-rose-100 rounded-2xl p-4"
+          >
+            <Heart size={18} className="text-rose-500 fill-rose-500 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold text-gray-900 text-sm">관심 기업 보기</p>
+              <p className="text-xs text-gray-500 mt-0.5">하트 누른 기업들을 한 눈에</p>
+            </div>
+            <ChevronLeft size={16} className="rotate-180 text-rose-300" />
+          </Link>
+        </FadeIn>
+
+        {/* ⑯ 면접 질문 배너 */}
         <FadeIn delay={0.5}>
           <Link
             href="/interview"
