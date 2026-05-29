@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Noto_Sans_KR } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { Analytics } from '@/components/Analytics'
 import './globals.css'
 
 const notoSansKr = Noto_Sans_KR({
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </div>
           <Toaster richColors position="top-center" />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

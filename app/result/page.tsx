@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Share2, Info, FileText } from 'lucide-react'
+import { ChevronLeft, Share2, Info, FileText, MessageCircle } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { toast } from 'sonner'
 import { FadeIn, SlideUp, ScaleIn } from '@/components/result/FadeIn'
@@ -195,7 +195,26 @@ export default function ResultPage() {
           <AlertSignup stage1={stage1} />
         </FadeIn>
 
-        {/* ⑭ 자기소개서 생성 배너 */}
+        {/* ⑭ 면접 질문 배너 */}
+        <FadeIn delay={0.5}>
+          <Link
+            href="/interview"
+            className="flex items-center gap-4 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-5 text-white active:opacity-80 transition-opacity"
+          >
+            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+              <MessageCircle size={22} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-black text-base">AI 면접 질문 예측</p>
+              <p className="text-purple-200 text-xs mt-0.5">
+                지원 기업군별 예상 질문 10개 + 답변 가이드
+              </p>
+            </div>
+            <ChevronLeft size={20} className="rotate-180 text-purple-300 flex-shrink-0" />
+          </Link>
+        </FadeIn>
+
+        {/* ⑮ 자기소개서 생성 배너 */}
         <FadeIn delay={0.5}>
           <Link
             href="/cover-letter"
