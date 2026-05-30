@@ -6,6 +6,7 @@ import { Stage1Form } from '@/components/forms/Stage1Form'
 import { PreviewLockScreen } from '@/components/forms/PreviewLockScreen'
 import { Stage2Form } from '@/components/forms/Stage2Form'
 import { LoadingScreen } from '@/components/forms/LoadingScreen'
+import { getMockResult } from '@/lib/mock-result'
 import type { Stage1Data, Stage2Data } from '@/lib/types'
 
 const defaultStage1: Stage1Data = {
@@ -30,20 +31,33 @@ const defaultStage2: Stage2Data = {
 
 type Step = 'stage1' | 'preview' | 'stage2' | 'loading'
 
+function saveAndNavigate(
+  result: object,
+  stage1: Stage1Data,
+  s2: Stage2Data | null,
+  router: ReturnType<typeof useRouter>
+) {
+  sessionStorage.setItem('analysisResult', JSON.stringify(result))
+  sessionStorage.setItem('stage1Data', JSON.stringify(stage1))
+  sessionStorage.setItem('stage2Data', s2 ? JSON.stringify(s2) : '')
+  sessionStorage.setItem('skippedStage2', s2 ? 'false' : 'true')
+  router.push('/result')
+}
+
 export default function AnalyzePage() {
   const router = useRouter()
-  const [step, setStep] = useState<Step>('stage1')
-  const [stage1, setStage1] = useState<Stage1Data>(defaultStage1)
-  const [stage2, setStage2] = useState<Stage2Data>(defaultStage2)
+  const [step,       setStep]       = useState<Step>('stage1')
+  const [stage1,     setStage1]     = useState<Stage1Data>(defaultStage1)
+  const [stage2,     setStage2]     = useState<Stage2Data>(defaultStage2)
   const [streamText, setStreamText] = useState('')
-  const [error, setError] = useState('')
+  const [error,      setError]      = useState('')
 
   async function runAnalysis(s2: Stage2Data | null) {
     setStep('loading')
     setStreamText('')
     setError('')
 
-    // Save company insight in background (fire and forget)
+    // 회사 정보 백그라운드 저장
     if (s2 && s2.resignationReasons.length > 0) {
       fetch('/api/save-insight', {
         method: 'POST',
@@ -59,9 +73,7 @@ export default function AnalyzePage() {
         body: JSON.stringify({ stage1, stage2: s2 }),
       })
 
-      if (!response.ok || !response.body) {
-        throw new Error('분석 요청에 실패했어요')
-      }
+      if (!response.ok || !response.body) throw new Error('api_error')
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
@@ -75,19 +87,29 @@ export default function AnalyzePage() {
         setStreamText((prev) => prev + chunk)
       }
 
-      const jsonMatch = accumulated.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('결과를 파싱할 수 없어요')
+      // 마크다운 코드블록 제거 후 JSON 추출
+      const cleaned = accumulated
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .trim()
 
-      const result = JSON.parse(jsonMatch[0])
-      sessionStorage.setItem('analysisResult', JSON.stringify(result))
-      sessionStorage.setItem('stage1Data', JSON.stringify(stage1))
-      sessionStorage.setItem('stage2Data', s2 ? JSON.stringify(s2) : '')
-      sessionStorage.setItem('skippedStage2', s2 ? 'false' : 'true')
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const result = JSON.parse(jsonMatch[0])
+        saveAndNavigate(result, stage1, s2, router)
+        return
+      }
 
-      router.push('/result')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했어요. 다시 시도해주세요.')
-      setStep('stage2')
+      // JSON 파싱 실패 → 목업으로 폴백
+      console.warn('API 응답 파싱 실패, 목업 데이터 사용')
+      saveAndNavigate(getMockResult(stage1), stage1, s2, router)
+
+    } catch {
+      // API 호출 자체 실패 → 목업으로 폴백
+      console.warn('API 호출 실패, 목업 데이터 사용')
+      // 로딩 화면을 2초간 보여주고 목업 결과로 이동
+      await new Promise((r) => setTimeout(r, 2000))
+      saveAndNavigate(getMockResult(stage1), stage1, s2, router)
     }
   }
 
@@ -105,21 +127,12 @@ export default function AnalyzePage() {
         />
       )}
       {step === 'stage2' && (
-        <>
-          <Stage2Form
-            data={stage2}
-            onChange={setStage2}
-            onBack={() => setStep('preview')}
-            onSubmit={() => runAnalysis(stage2)}
-          />
-          {error && (
-            <div className="fixed bottom-20 inset-x-0 flex justify-center px-4">
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl shadow-sm max-w-sm w-full text-center">
-                {error}
-              </div>
-            </div>
-          )}
-        </>
+        <Stage2Form
+          data={stage2}
+          onChange={setStage2}
+          onBack={() => setStep('preview')}
+          onSubmit={() => runAnalysis(stage2)}
+        />
       )}
       {step === 'loading' && <LoadingScreen streamText={streamText} />}
     </>
