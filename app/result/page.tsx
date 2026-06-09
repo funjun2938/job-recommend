@@ -20,6 +20,7 @@ import { ShareCard } from '@/components/result/ShareCard'
 import { TrendingSkills } from '@/components/result/TrendingSkills'
 import { PeerMoves } from '@/components/result/PeerMoves'
 import { CompanyInsightTeaser } from '@/components/result/CompanyInsightTeaser'
+import { NetworkSection } from '@/components/result/NetworkSection'
 import { ResumeBuilder } from '@/components/result/ResumeBuilder'
 import { JobTimeline } from '@/components/result/JobTimeline'
 import { DataPrivacyBadge } from '@/components/result/DataPrivacyBadge'
@@ -173,6 +174,13 @@ export default function ResultPage() {
           <FadeIn delay={0.3}>
             <PeerMoves jobCategory={stage1.jobCategory} companySize={stage1.companySize} />
           </FadeIn>
+        )}
+
+        {/* ⑥b 명함첩 연동 — 네트워크 맵 + 유사 커리어 경로 (외부 데이터) */}
+        {stage1 && (
+          <SlideUp delay={0.32}>
+            <NetworkSection stage1={stage1} />
+          </SlideUp>
         )}
 
         {/* ⑦ 인기 스킬 트렌드 */}

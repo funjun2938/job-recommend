@@ -96,3 +96,96 @@
 
 ### timeline (alert_subscriptions)
 `3개월 내` `6개월 내` `1년 내` `미정`
+
+---
+
+# 명함첩 연동 테이블 (v2)
+
+## user_profiles
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| id | UUID | PK | 자동 생성 |
+| auth_user_id | UUID | UNIQUE | Supabase auth 사용자 (있을 경우) |
+| session_id | TEXT | nullable | 비로그인 세션 키 |
+| current_company | TEXT | nullable | 사용자 현재 회사 |
+| current_job_category | TEXT | nullable | 사용자 직군 |
+| namecard_provider | TEXT | DEFAULT 'remember' | 명함첩 제공자 |
+| namecard_synced_at | TIMESTAMPTZ | nullable | 최근 동기화 시각 |
+| namecard_count | INTEGER | DEFAULT 0 | 보유 명함 수 |
+| consent_network | BOOLEAN | DEFAULT false | 익명 집계 활용 동의 |
+
+## namecards
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| id | UUID | PK | 자동 생성 |
+| owner_id | UUID | FK→user_profiles | 명함첩 소유자 |
+| contact_hash | TEXT | NOT NULL | 연락처 해시 (이름/연락처 평문 미저장) |
+| company_name | TEXT | NOT NULL | 명함의 회사 = 네트워크 노드 |
+| job_title | TEXT | nullable | 직함 |
+| job_category | TEXT | nullable | 직군 |
+| industry | TEXT | nullable | 산업 |
+| company_size | TEXT | nullable | 회사 규모 |
+| seniority | TEXT | nullable | `실무`/`리더`/`임원` |
+| exchanged_at | DATE | nullable | 명함 교환 시점 |
+| is_current | BOOLEAN | DEFAULT true | 해당 연락처 최신 명함 여부 |
+
+## contact_transitions
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| id | UUID | PK | 자동 생성 |
+| contact_hash | TEXT | NOT NULL | 이직한 사람 (비식별) |
+| from_company | TEXT | NOT NULL | 이전 회사 |
+| to_company | TEXT | NOT NULL | 이직한 회사 |
+| job_category | TEXT | nullable | 직군 |
+| transitioned_at | DATE | nullable | 이직 추정 시점 |
+| observed_count | INTEGER | DEFAULT 1 | 관측된 명함첩 수 (교차검증) |
+
+## company_network_edges
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| company_a | TEXT | NOT NULL (a<b) | 무방향 엣지 한쪽 |
+| company_b | TEXT | NOT NULL | 무방향 엣지 다른쪽 |
+| job_category | TEXT | nullable | 직군별 분해 |
+| edge_weight | INTEGER | DEFAULT 1 | 동시 등장(co-occurrence) 횟수 |
+| transition_weight | INTEGER | DEFAULT 0 | A↔B 이직 흐름 횟수 |
+
+## career_paths
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| contact_hash | TEXT | UNIQUE | 한 사람의 커리어 궤적 |
+| job_category | TEXT | nullable | 직군 |
+| company_seq | TEXT[] | DEFAULT '{}' | 회사 시퀀스 (오래된→최신) |
+| seniority_seq | TEXT[] | DEFAULT '{}' | 직급 시퀀스 |
+| total_moves | SMALLINT | DEFAULT 0 | 이직 횟수 |
+
+## recommendation_scores
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|------|------|------|------|
+| id | UUID | PK | 자동 생성 |
+| user_id | UUID | FK→user_profiles | 추천 대상 사용자 |
+| company_name | TEXT | NOT NULL | 추천 회사 |
+| survey_fit | DECIMAL(4,3) | 0~1 | 축①: 서베이 적합도 |
+| network_proximity | DECIMAL(4,3) | 0~1 | 축②: 네트워크 근접도 |
+| career_similarity | DECIMAL(4,3) | 0~1 | 축③: 커리어 경로 유사도 |
+| weight_survey | DECIMAL(4,3) | DEFAULT 0.50 | 서베이 가중치 |
+| weight_network | DECIMAL(4,3) | DEFAULT 0.25 | 네트워크 가중치 |
+| weight_career | DECIMAL(4,3) | DEFAULT 0.25 | 커리어 가중치 |
+| final_score | DECIMAL(5,4) | 트리거 계산 | 가중 합산 최종 점수 |
+| calculated_at | TIMESTAMPTZ | NOT NULL | 계산 시각 |
+
+> `final_score = survey_fit·w_survey + network_proximity·w_network + career_similarity·w_career`
+> (BEFORE INSERT/UPDATE 트리거 `compute_final_score()` 가 자동 계산)
+
+---
+
+### seniority (namecards / transitions)
+`실무` `리더` `임원`
+
+### namecard_provider
+`remember` `rolodex` `linkedin`

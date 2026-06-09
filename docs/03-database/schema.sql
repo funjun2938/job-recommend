@@ -241,3 +241,99 @@ INSERT INTO salary_benchmarks (job_category, company_size, experience_min, exper
   ('금융·회계',     '대기업',    3, 5,  5500, 7000, 9000, 30),
   ('금융·회계',     '외국계',    5, 10, 9000, 13000,20000,15)
 ON CONFLICT (job_category, company_size, experience_min, experience_max) DO NOTHING;
+
+
+-- ================================================================
+-- 명함첩(리멤버 류) 외부 데이터 연동 — 두 번째 데이터 자산 축
+-- (상세 정의 + 트리거/뷰/함수는 migrations/007_namecard_network.sql 참조)
+--   ① 명함첩 = 네트워킹 회사 맵 → 회사 추천 기반 데이터
+--   ② 명함 교체 이력 = 개인 이직 이력 → 유사 커리어 경로 추천 데이터
+-- ================================================================
+
+-- 9. user_profiles — 명함첩 연동 사용자 식별
+CREATE TABLE IF NOT EXISTS user_profiles (
+  id                   UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  auth_user_id         UUID        UNIQUE,
+  session_id           TEXT,
+  display_name         TEXT,
+  current_company      TEXT,
+  current_job_category TEXT,
+  namecard_provider    TEXT        DEFAULT 'remember',
+  namecard_synced_at   TIMESTAMPTZ,
+  namecard_count       INTEGER     NOT NULL DEFAULT 0,
+  consent_network      BOOLEAN     NOT NULL DEFAULT FALSE
+);
+
+-- 10. namecards — 명함첩 개별 명함 = 네트워크 노드
+CREATE TABLE IF NOT EXISTS namecards (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id      UUID        NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  contact_hash  TEXT        NOT NULL,
+  company_name  TEXT        NOT NULL,
+  job_title     TEXT,
+  job_category  TEXT,
+  industry      TEXT,
+  company_size  TEXT,
+  seniority     TEXT,
+  exchanged_at  DATE,
+  is_current    BOOLEAN     NOT NULL DEFAULT TRUE,
+  CONSTRAINT uq_owner_contact_company UNIQUE (owner_id, contact_hash, company_name)
+);
+
+-- 11. contact_transitions — 명함 교체 = 그 사람의 이직 사건
+CREATE TABLE IF NOT EXISTS contact_transitions (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  contact_hash    TEXT        NOT NULL,
+  from_company    TEXT        NOT NULL,
+  to_company      TEXT        NOT NULL,
+  job_category    TEXT,
+  from_seniority  TEXT,
+  to_seniority    TEXT,
+  transitioned_at DATE,
+  observed_count  INTEGER     NOT NULL DEFAULT 1,
+  CONSTRAINT uq_transition UNIQUE (contact_hash, from_company, to_company)
+);
+
+-- 12. company_network_edges — 집계 자산①: 회사 네트워크 맵
+CREATE TABLE IF NOT EXISTS company_network_edges (
+  id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_a         TEXT        NOT NULL,
+  company_b         TEXT        NOT NULL,
+  job_category      TEXT,
+  edge_weight       INTEGER     NOT NULL DEFAULT 1,
+  transition_weight INTEGER     NOT NULL DEFAULT 0,
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT chk_edge_order CHECK (company_a < company_b),
+  CONSTRAINT uq_edge UNIQUE (company_a, company_b, job_category)
+);
+
+-- 13. career_paths — 집계 자산②: 익명 커리어 경로 시퀀스
+CREATE TABLE IF NOT EXISTS career_paths (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  contact_hash  TEXT        NOT NULL UNIQUE,
+  job_category  TEXT,
+  company_seq   TEXT[]      NOT NULL DEFAULT '{}',
+  seniority_seq TEXT[]      NOT NULL DEFAULT '{}',
+  total_moves   SMALLINT    NOT NULL DEFAULT 0,
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 14. recommendation_scores — 3축 가중 합산 최종 추천 점수 영속화
+CREATE TABLE IF NOT EXISTS recommendation_scores (
+  id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  user_id           UUID         REFERENCES user_profiles(id) ON DELETE CASCADE,
+  company_name      TEXT         NOT NULL,
+  survey_fit        DECIMAL(4,3) NOT NULL DEFAULT 0,   -- 서베이 적합도 0~1
+  network_proximity DECIMAL(4,3) NOT NULL DEFAULT 0,   -- 네트워크 근접도 0~1
+  career_similarity DECIMAL(4,3) NOT NULL DEFAULT 0,   -- 커리어 경로 유사도 0~1
+  weight_survey     DECIMAL(4,3) NOT NULL DEFAULT 0.50,
+  weight_network    DECIMAL(4,3) NOT NULL DEFAULT 0.25,
+  weight_career     DECIMAL(4,3) NOT NULL DEFAULT 0.25,
+  final_score       DECIMAL(5,4) NOT NULL DEFAULT 0,   -- 가중 합산 결과
+  calculated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);

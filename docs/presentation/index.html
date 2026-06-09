@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>이직 추천 서비스 — 발표 자료</title>
+<style>
+  :root {
+    --indigo: #4f46e5;
+    --violet: #7c3aed;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --bg: #f8fafc;
+    --amber: #d97706;
+    --green: #16a34a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", Roboto, sans-serif;
+    background: #0b1020;
+    color: var(--ink);
+    overflow: hidden;
+  }
+
+  /* 슬라이드 무대 */
+  .deck { width: 100vw; height: 100vh; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 7vh 9vw;
+    background: var(--bg);
+    opacity: 0;
+    transition: opacity .35s ease;
+    overflow: hidden;
+  }
+  .slide.active { display: flex; opacity: 1; }
+  .slide.dark { background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%); color: #fff; }
+  .slide.dark .muted { color: #c7d2fe; }
+
+  /* 타이포 */
+  .kicker {
+    font-size: clamp(.8rem, 1.4vw, 1rem);
+    font-weight: 800; letter-spacing: .08em;
+    color: var(--violet); text-transform: uppercase;
+    margin-bottom: 1.2rem;
+  }
+  .slide.dark .kicker { color: #a5b4fc; }
+  h1 { font-size: clamp(2.4rem, 6vw, 4.6rem); font-weight: 900; line-height: 1.08; letter-spacing: -.02em; }
+  h2 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 900; line-height: 1.12; letter-spacing: -.02em; margin-bottom: 1.8rem; }
+  h3 { font-size: clamp(1.1rem, 2vw, 1.5rem); font-weight: 800; }
+  p.lead { font-size: clamp(1.05rem, 2.1vw, 1.5rem); color: var(--muted); line-height: 1.6; max-width: 60ch; }
+  .muted { color: var(--muted); }
+  .accent { color: var(--violet); }
+  .hl { background: linear-gradient(transparent 55%, #ddd6fe 55%); padding: 0 .1em; font-weight: 800; }
+  .slide.dark .hl { background: linear-gradient(transparent 55%, rgba(167,139,250,.4) 55%); }
+
+  /* 레이아웃 헬퍼 */
+  .grid { display: grid; gap: 1.4rem; }
+  .grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .card {
+    background: #fff; border: 1px solid var(--line); border-radius: 20px;
+    padding: 1.6rem 1.8rem;
+    box-shadow: 0 4px 20px rgba(15,23,42,.04);
+  }
+  .slide.dark .card { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); color:#fff; backdrop-filter: blur(6px); }
+  .card .icon { font-size: 2rem; margin-bottom: .8rem; display:block; }
+  .card h3 { margin-bottom: .5rem; }
+  .card p { font-size: clamp(.85rem, 1.5vw, 1.05rem); color: var(--muted); line-height: 1.55; }
+  .slide.dark .card p { color: #c7d2fe; }
+
+  .pill { display:inline-block; padding:.3rem .8rem; border-radius:999px; font-size:.8rem; font-weight:800; }
+  .pill.v { background:#ede9fe; color:var(--violet); }
+  .pill.i { background:#eef2ff; color:var(--indigo); }
+  .pill.a { background:#fef3c7; color:var(--amber); }
+  .pill.g { background:#dcfce7; color:var(--green); }
+
+  ul.feat { list-style:none; display:flex; flex-direction:column; gap:1rem; margin-top:.5rem; }
+  ul.feat li { display:flex; gap:.9rem; align-items:flex-start; font-size:clamp(.95rem,1.8vw,1.25rem); line-height:1.5; }
+  ul.feat li .dot { color:var(--violet); font-weight:900; flex-shrink:0; }
+
+  .flow { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin-top:1rem; }
+  .flow .node { background:#fff; border:2px solid var(--line); border-radius:14px; padding:.7rem 1.1rem; font-weight:800; font-size:clamp(.8rem,1.5vw,1.05rem); }
+  .flow .node.v { border-color:var(--violet); color:var(--violet); }
+  .flow .node.i { border-color:var(--indigo); color:var(--indigo); }
+  .flow .node.a { border-color:var(--amber); color:var(--amber); background:#fffbeb; }
+  .flow .arrow { color:var(--muted); font-size:1.4rem; }
+
+  .stat { text-align:center; }
+  .stat .num { font-size: clamp(2.2rem,5vw,3.6rem); font-weight:900; color:var(--violet); line-height:1; }
+  .stat .lbl { font-size:clamp(.8rem,1.4vw,1rem); color:var(--muted); margin-top:.5rem; }
+
+  table.erd { width:100%; border-collapse:collapse; font-size:clamp(.75rem,1.3vw,.95rem); }
+  table.erd th, table.erd td { text-align:left; padding:.6rem .8rem; border-bottom:1px solid var(--line); }
+  table.erd th { color:var(--violet); font-weight:800; }
+  table.erd td.t { color:var(--muted); font-family: ui-monospace, monospace; }
+
+  .badge-row { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:1.4rem; }
+  .tech { background:#fff; border:1px solid var(--line); border-radius:10px; padding:.5rem .9rem; font-weight:700; font-size:clamp(.78rem,1.3vw,.95rem); color:var(--ink); }
+
+  /* 진행 UI */
+  .progress { position:fixed; top:0; left:0; height:4px; background:linear-gradient(90deg,var(--indigo),var(--violet)); z-index:50; transition:width .35s ease; }
+  .nav { position:fixed; bottom:22px; right:26px; display:flex; gap:8px; z-index:50; align-items:center; }
+  .nav button { width:42px; height:42px; border-radius:50%; border:none; background:rgba(124,58,237,.12); color:var(--violet); font-size:1.2rem; cursor:pointer; font-weight:900; transition:.15s; }
+  .nav button:hover { background:rgba(124,58,237,.25); }
+  .slide.dark ~ .nav button { background:rgba(255,255,255,.15); color:#fff; }
+  .counter { position:fixed; bottom:30px; left:26px; font-size:.85rem; font-weight:700; color:var(--muted); z-index:50; }
+  .slide.dark ~ .counter { color:#c7d2fe; }
+  .hint { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); font-size:.75rem; color:var(--muted); z-index:40; opacity:.6; }
+
+  .logo { position:absolute; top:5vh; right:9vw; font-weight:900; color:var(--violet); font-size:.95rem; letter-spacing:-.01em; }
+  .slide.dark .logo { color:#c4b5fd; }
+
+  @media (max-width: 820px) {
+    .grid.cols-2, .grid.cols-3 { grid-template-columns: 1fr; }
+    .slide { padding: 8vh 7vw; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck" id="deck">
+
+  <!-- 1. 타이틀 -->
+  <section class="slide dark active">
+    <div class="kicker">AI 이직 추천 · 내부자 데이터 플랫폼</div>
+    <h1>이직, 더 이상<br/>감으로 결정하지 마세요</h1>
+    <p class="lead" style="color:#ddd6fe; margin-top:1.6rem;">
+      내 상황을 입력하면 AI가 최적의 이직처를 추천하고,<br/>
+      외부에 없는 <b style="color:#fff;">내부자 데이터</b>를 함께 만들어가는 서비스
+    </p>
+    <div class="badge-row" style="margin-top:2.4rem;">
+      <span class="tech" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff;">Next.js 16</span>
+      <span class="tech" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff;">Gemini AI</span>
+      <span class="tech" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff;">Supabase</span>
+      <span class="tech" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff;">명함첩 연동</span>
+    </div>
+  </section>
+
+  <!-- 2. 문제 정의 -->
+  <section class="slide">
+    <div class="logo">이직 추천 서비스</div>
+    <div class="kicker">Problem</div>
+    <h2>이직 시장의 가장 큰 문제는<br/><span class="accent">정보의 비대칭</span>입니다</h2>
+    <div class="grid cols-3">
+      <div class="card"><span class="icon">🕵️</span><h3>진짜 정보가 없다</h3><p>실연봉, 퇴사 이유, 조직문화 같은 핵심 정보는 외부에 공개되지 않습니다.</p></div>
+      <div class="card"><span class="icon">🎲</span><h3>감으로 결정한다</h3><p>잡플래닛 별점·지인 한두 명의 말에 의존해 인생의 큰 결정을 내립니다.</p></div>
+      <div class="card"><span class="icon">📉</span><h3>후회로 이어진다</h3><p>이직자의 상당수가 "들은 것과 다르다"며 1년 내 재이직을 고민합니다.</p></div>
+    </div>
+  </section>
+
+  <!-- 3. 핵심 인사이트 -->
+  <section class="slide dark">
+    <div class="kicker">Key Insight</div>
+    <h2>그래서 우리는 추천만 하지 않고,<br/><span class="hl" style="color:#fff;">데이터를 만듭니다</span></h2>
+    <p class="lead" style="color:#ddd6fe;">
+      사용자가 <b style="color:#fff;">자기 회사의 내부 정보</b>(실연봉·퇴사이유·장단점·NPS)를 입력해야
+      추천·알림을 받을 수 있는 <b style="color:#fff;">가치 교환(value exchange)</b> 구조.
+    </p>
+    <div class="flow" style="margin-top:2rem;">
+      <span class="node" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff;">현황 입력 (쉬움)</span>
+      <span class="arrow" style="color:#a5b4fc;">→</span>
+      <span class="node" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff;">🔒 결과 잠금</span>
+      <span class="arrow" style="color:#a5b4fc;">→</span>
+      <span class="node" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff;">내부자 정보 제공</span>
+      <span class="arrow" style="color:#a5b4fc;">→</span>
+      <span class="node a">🔓 추천 해제 + 데이터 축적</span>
+    </div>
+    <p class="lead" style="color:#fff; margin-top:2rem; font-weight:800;">
+      쓸수록 데이터가 쌓이고, 데이터가 쌓일수록 추천이 정확해지는 선순환.
+    </p>
+  </section>
+
+  <!-- 4. 솔루션 개요 -->
+  <section class="slide">
+    <div class="logo">이직 추천 서비스</div>
+    <div class="kicker">Solution</div>
+    <h2>2단계 입력 → AI 분석 → 풍부한 결과</h2>
+    <div class="flow">
+      <span class="node i">① 현황 (직군·경력·연봉·스킬)</span>
+      <span class="arrow">→</span>
+      <span class="node v">② 회사 인사이트 (내부 정보)</span>
+      <span class="arrow">→</span>
+      <span class="node a">Gemini AI 분석</span>
+      <span class="arrow">→</span>
+      <span class="node">맞춤 추천 결과</span>
+    </div>
+    <div class="grid cols-3" style="margin-top:2.2rem;">
+      <div class="card"><span class="icon">🎯</span><h3>맞춤 기업군 추천</h3><p>적합도 점수와 함께 직군별 타깃 기업을 제시</p></div>
+      <div class="card"><span class="icon">📊</span><h3>연봉 벤치마크</h3><p>내 연봉의 시장 내 위치(퍼센타일) 분석</p></div>
+      <div class="card"><span class="icon">📝</span><h3>AI 자소서·면접</h3><p>분석 결과로 자기소개서·예상 면접질문 자동 생성</p></div>
+    </div>
+  </section>
+
+  <!-- 5. 데이터 자산 1 -->
+  <section class="slide">
+    <div class="logo">이직 추천 서비스</div>
+    <div class="kicker">Data Asset ①</div>
+    <h2>서베이 — <span class="accent">외부에 없는 내부자 데이터</span></h2>
+    <div class="grid cols-2">
+      <div>
+        <ul class="feat">
+          <li><span class="dot">▪</span><span><b>실연봉 데이터</b> — 직급·직군·규모별 실제 연봉 분포</span></li>
+          <li><span class="dot">▪</span><span><b>퇴사 이유</b> — 회사를 떠나는 진짜 이유 집계</span></li>
+          <li><span class="dot">▪</span><span><b>장단점 / 경영진 신뢰도 / NPS</b> — 정성+정량 평판</span></li>
+          <li><span class="dot">▪</span><span><b>회사별 평판 자동 집계</b> — 트리거로 실시간 누적</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="pill v">company_insights → company_reputation</span>
+        <p style="margin-top:1rem;">입력이 INSERT 되면 DB 트리거가 회사별 평균 NPS·신뢰도·재직의향을 자동 재집계.
+        최소 3건 이상일 때만 노출해 <b>익명성</b>을 보호합니다.</p>
+        <div class="grid cols-3" style="margin-top:1.4rem; gap:.8rem;">
+          <div class="stat"><div class="num">5</div><div class="lbl">핵심 테이블</div></div>
+          <div class="stat"><div class="num">∞</div><div class="lbl">누적 데이터</div></div>
+          <div class="stat"><div class="num">3+</div><div class="lbl">익명성 임계</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. 데이터 자산 2 (교수 피드백) -->
+  <section class="slide dark">
+    <div class="kicker">Data Asset ② · 교수님 피드백 반영</div>
+    <h2>명함첩 연동 — <span class="hl" style="color:#fff;">외부 데이터로 확장</span></h2>
+    <p class="lead" style="color:#ddd6fe; margin-bottom:1.6rem;">
+      서베이뿐 아니라 <b style="color:#fff;">리멤버 같은 명함첩</b>을 연동해 추천 근거를 두 배로.
+    </p>
+    <div class="grid cols-2">
+      <div class="card">
+        <span class="pill v">자산①</span>
+        <h3 style="margin-top:.8rem;">🕸️ 인맥 네트워크 맵</h3>
+        <p>내 명함첩 = 내가 네트워킹하는 회사들의 지도. 인맥이 닿아있는 회사를 찾아
+        <b style="color:#fff;">레퍼럴(지인 추천) 입사</b> 가능성이 높은 곳을 추천.</p>
+      </div>
+      <div class="card">
+        <span class="pill i">자산②</span>
+        <h3 style="margin-top:.8rem;">🌿 유사 커리어 경로</h3>
+        <p>사람들이 이직할 때마다 명함이 바뀜 = 개인의 이직 이력. 나와 <b style="color:#fff;">비슷한 커리어를 탄 사람들이
+        다음에 간 회사</b>를 분석해 추천.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. 명함첩 데이터 파이프라인 -->
+  <section class="slide">
+    <div class="logo">이직 추천 서비스</div>
+    <div class="kicker">Pipeline</div>
+    <h2>명함 한 장이 추천이 되기까지</h2>
+    <div class="flow">
+      <span class="node v">📇 명함첩 연동</span>
+      <span class="arrow">→</span>
+      <span class="node">namecards 적재</span>
+      <span class="arrow">→</span>
+      <span class="node i">company_network_edges<br/><small>(회사 동시등장 = 네트워크)</small></span>
+    </div>
+    <div class="flow" style="margin-top:1rem;">
+      <span class="node">동일인 회사 변경 감지</span>
+      <span class="arrow">→</span>
+      <span class="node i">contact_transitions<br/><small>(명함 교체 = 이직)</small></span>
+      <span class="arrow">→</span>
+      <span class="node a">career_paths<br/><small>(커리어 궤적 누적)</small></span>
+    </div>
+    <div class="card" style="margin-top:2rem;">
+      <p><b class="accent">recommend_by_career_path()</b> — 내 회사 시퀀스와 겹치는 경로를 가진 사람들이
+      "다음에 간 회사"를 빈도·유사도순으로 반환하는 PostgreSQL 함수. 이름·연락처는 저장하지 않고 <b>해시</b>로만 처리.</p>
+    </div>
+  </section>
+
+  <!-- 8. 추천 엔진 -->
+  <section class="slide">
+    <div class="logo">이직 추천 서비스</div>
+    <div class="kicker">Recommendation Engine</div>
+    <h2>3개의 축을 결합한 추천 점수</h2>
+    <div class="grid cols-3" style="margin-bottom:1.8rem;">
+      <div class="card" style="text-align:center;"><span class="pill i">축 1</span><h3 style="margin:.8rem 0;">서베이 적합도</h3><p>직군·경력·스킬·연봉 매칭</p></div>
+      <div class="card" style="text-align:center;"><span class="pill v">축 2</span><h3 style="margin:.8rem 0;">네트워크 근접도</h3><p>명함첩 인맥 밀도</p></div>
+      <div class="card" style="text-align:center;"><span class="pill a">축 3</span><h3 style="margin:.8rem 0;">커리어 경로 유사도</h3><p>유사 궤적 peer의 선택</p></div>
+    </div>
+    <div class="flow" style="justify-content:center;">
+      <span class="node i">적합도 × 0.5</span><span class="arrow">+</span>
+      <span class="node v">네트워크 × 0.25</span><span class="arrow">+</span>
+      <span class="node a">경로 × 0.25</span><span class="arrow">=</span>
+      <span class="node" style="background:#dcfce7;border-color:var(--green);color:var(--green);">최종 추천 랭킹</span>
+    </div>
+    <p class="muted" style="margin-top:1.2rem; font-size:.95rem;">
+      가중치는 튜닝 가능 · 결과는 <b class="accent">recommendation_scores</b> 테이블에 영속화(재현·AB·튜닝)
+    </p>
+  </section>
+
+  <!-- 9. 아키텍처 / 스택 -->
+  <section class="slide">
+    <div class="logo">이직 추천 서비스</div>
+    <div class="kicker">Architecture</div>
+    <h2>기술 스택 & 구조</h2>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>🖥️ Frontend</h3>
+        <p style="margin:.8rem 0;">모바일 우선(430px 프레임) · App Router · 스트리밍 UI · 다크모드 · PWA</p>
+        <div class="badge-row">
+          <span class="tech">Next.js 16</span><span class="tech">TypeScript</span>
+          <span class="tech">Tailwind v4</span><span class="tech">Framer Motion</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>⚙️ Backend / Data</h3>
+        <p style="margin:.8rem 0;">Route Handlers · RLS 보안 · 트리거 자동 집계 · 분석 캐싱</p>
+        <div class="badge-row">
+          <span class="tech">Gemini 2.5</span><span class="tech">Supabase</span>
+          <span class="tech">PostgreSQL</span><span class="tech">Stripe</span><span class="tech">Vercel</span>
+        </div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:1.6rem; font-size:1rem;">AI 응답 실패 시 직군별 목업으로 폴백 → 데모는 항상 결과 화면까지 도달.</p>
+  </section>
+
+  <!-- 10. ERD 요약 -->
+  <section class="slide">
+    <div class="logo">이직 추천 서비스</div>
+    <div class="kicker">Database</div>
+    <h2>데이터 모델 (14개 테이블)</h2>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3 class="accent" style="margin-bottom:.8rem;">서베이 축</h3>
+        <table class="erd">
+          <tr><th>테이블</th><th>역할</th></tr>
+          <tr><td class="t">company_insights</td><td>내부자 입력(핵심 자산)</td></tr>
+          <tr><td class="t">company_reputation</td><td>회사별 평판 집계</td></tr>
+          <tr><td class="t">salary_benchmarks</td><td>연봉 벤치마크</td></tr>
+          <tr><td class="t">alert_subscriptions</td><td>채용 알림</td></tr>
+          <tr><td class="t">analysis_cache</td><td>AI 응답 캐시</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3 class="accent" style="margin-bottom:.8rem;">명함첩 축 (신규)</h3>
+        <table class="erd">
+          <tr><th>테이블</th><th>역할</th></tr>
+          <tr><td class="t">user_profiles</td><td>연동 사용자</td></tr>
+          <tr><td class="t">namecards</td><td>명함 = 네트워크 노드</td></tr>
+          <tr><td class="t">contact_transitions</td><td>명함 교체 = 이직</td></tr>
+          <tr><td class="t">company_network_edges</td><td>회사 네트워크 맵</td></tr>
+          <tr><td class="t">career_paths</td><td>커리어 궤적</td></tr>
+          <tr><td class="t">recommendation_scores</td><td>3축 추천 점수</td></tr>
+        </table>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:1.2rem; font-size:.95rem;">전체 Mermaid ERD: <b>docs/03-database/ERD_mermaid.md</b></p>
+  </section>
+
+  <!-- 11. 비즈니스 모델 -->
+  <section class="slide">
+    <div class="logo">이직 추천 서비스</div>
+    <div class="kicker">Business Model</div>
+    <h2>어떻게 돈을 버는가</h2>
+    <div class="grid cols-3">
+      <div class="card"><span class="pill g">B2C 구독</span><h3 style="margin:.8rem 0;">Pro ₩9,900/월</h3><p>무제한 분석 · 자소서/면접 생성 · 알림 · 7일 무료체험</p></div>
+      <div class="card"><span class="pill i">B2B 데이터</span><h3 style="margin:.8rem 0;">평판·연봉 리포트</h3><p>헤드헌터·HR에 익명 집계 인사이트 판매</p></div>
+      <div class="card"><span class="pill a">채용 매칭</span><h3 style="margin:.8rem 0;">레퍼럴 수수료</h3><p>네트워크 기반 매칭 성사 시 채용 수수료</p></div>
+    </div>
+    <p class="lead" style="margin-top:2rem;">데이터가 쌓일수록 <b class="accent">진입장벽(moat)</b>이 높아지는 구조 — 후발주자가 복제 불가.</p>
+  </section>
+
+  <!-- 12. 마무리 -->
+  <section class="slide dark">
+    <div class="kicker">Wrap-up</div>
+    <h2>정리하면</h2>
+    <ul class="feat" style="max-width:64ch;">
+      <li><span class="dot" style="color:#a5b4fc;">①</span><span>이직 정보 비대칭을 <b style="color:#fff;">가치 교환 구조</b>로 해결</span></li>
+      <li><span class="dot" style="color:#a5b4fc;">②</span><span>서베이 + <b style="color:#fff;">명함첩 외부 데이터</b> 결합 (교수님 피드백 반영)</span></li>
+      <li><span class="dot" style="color:#a5b4fc;">③</span><span>네트워크 맵 · 커리어 경로로 <b style="color:#fff;">근거 있는 추천</b></span></li>
+      <li><span class="dot" style="color:#a5b4fc;">④</span><span>쓸수록 강해지는 <b style="color:#fff;">데이터 moat</b> 기반 SaaS</span></li>
+    </ul>
+    <h1 style="margin-top:2.4rem; font-size:clamp(2rem,5vw,3.4rem);">감사합니다 🙏</h1>
+    <p class="lead" style="color:#ddd6fe; margin-top:1rem;">Q & A</p>
+  </section>
+
+</div>
+
+<div class="counter" id="counter">01 / 12</div>
+<div class="hint">← → 또는 스페이스바로 이동 · F 전체화면</div>
+<div class="nav">
+  <button onclick="go(-1)" aria-label="이전">‹</button>
+  <button onclick="go(1)" aria-label="다음">›</button>
+</div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  let cur = 0;
+  function render() {
+    slides.forEach((s,i)=>s.classList.toggle('active', i===cur));
+    document.getElementById('progress').style.width = ((cur+1)/slides.length*100)+'%';
+    const n = String(cur+1).padStart(2,'0'), t = String(slides.length).padStart(2,'0');
+    document.getElementById('counter').textContent = `${n} / ${t}`;
+    // dark 슬라이드일 때 nav/counter 색 보정용 클래스
+    document.body.classList.toggle('on-dark', slides[cur].classList.contains('dark'));
+  }
+  function go(d){ cur = Math.max(0, Math.min(slides.length-1, cur+d)); render(); }
+  function goto(i){ cur = Math.max(0, Math.min(slides.length-1, i)); render(); }
+  document.addEventListener('keydown', e=>{
+    if(['ArrowRight',' ','PageDown'].includes(e.key)){ e.preventDefault(); go(1); }
+    else if(['ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); go(-1); }
+    else if(e.key==='Home'){ goto(0); }
+    else if(e.key==='End'){ goto(slides.length-1); }
+    else if(e.key.toLowerCase()==='f'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+  });
+  // 터치 스와이프
+  let sx=0;
+  document.addEventListener('touchstart',e=>sx=e.touches[0].clientX);
+  document.addEventListener('touchend',e=>{ const dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>50) go(dx<0?1:-1); });
+  render();
+</script>
+</body>
+</html>

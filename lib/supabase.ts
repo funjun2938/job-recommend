@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Stage1Data, Stage2Data } from './types'
+import type { Stage1Data, Stage2Data, RecommendationScore, ScoreWeights } from './types'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -39,4 +39,26 @@ export async function saveAlertSubscription(
     job_category: stage1.jobCategory,
     company_size: stage1.companySize,
   })
+}
+
+/** 3축 추천 점수를 recommendation_scores 테이블에 적재 (명함첩 연동 시) */
+export async function saveRecommendationScores(
+  scores: RecommendationScore[],
+  weights: ScoreWeights,
+  userId: string | null = null
+) {
+  if (!supabase || scores.length === 0) return
+  await supabase.from('recommendation_scores').insert(
+    scores.map((s) => ({
+      user_id: userId,
+      company_name: s.company,
+      survey_fit: s.surveyFit,
+      network_proximity: s.networkProximity,
+      career_similarity: s.careerSimilarity,
+      weight_survey: weights.survey,
+      weight_network: weights.network,
+      weight_career: weights.career,
+      final_score: s.finalScore,
+    }))
+  )
 }
