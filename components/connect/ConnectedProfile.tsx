@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  CheckCircle2, ArrowRight, ArrowDown, Users, GitBranch,
-  Briefcase, ChevronDown, ChevronUp, ShieldCheck, Plus, Loader2,
+  CheckCircle2, ArrowRight, Users, GitBranch,
+  Briefcase, ShieldCheck, Plus, Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -18,7 +18,6 @@ export function ConnectedProfile() {
   const router = useRouter()
   const [profile, setProfile] = useState<UnifiedProfile | null>(null)
   const [adding, setAdding] = useState<Provider | null>(null)
-  const [showJson, setShowJson] = useState(false)
 
   useEffect(() => {
     const raw = sessionStorage.getItem('unifiedProfile')
@@ -179,54 +178,29 @@ export function ConnectedProfile() {
           )}
         </div>
 
-        {/* 소스별 정규화 매핑 */}
-        {profile.contributions.map((contrib) => {
-          const m = providerMeta(contrib.source)
-          return (
-            <div key={contrib.source} className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded flex items-center justify-center text-white text-[10px] font-bold" style={{ background: m.brand }}>{m.name[0]}</span>
-                <h2 className="font-bold text-gray-900 text-sm">{m.name} → 표준 규격 변환</h2>
+        {/* 각 연동에서 알아낸 것 — 사용자 친화 요약 */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+          <h2 className="font-bold text-gray-900 text-sm">각 연동에서 알아낸 것</h2>
+          {profile.contributions.map((contrib) => {
+            const m = providerMeta(contrib.source)
+            return (
+              <div key={contrib.source} className="rounded-xl border border-gray-100 p-3.5">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0" style={{ background: m.brand }}>{m.name[0]}</span>
+                  <span className="text-sm font-bold text-gray-900">{m.name}</span>
+                  <span className="text-[11px] text-gray-400 truncate">{contrib.summary}</span>
+                </div>
+                <ul className="space-y-1.5">
+                  {contrib.highlights.map((h, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-xs text-gray-600 leading-relaxed">
+                      <CheckCircle2 size={13} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                      <span>{h}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-
-              <div className="space-y-2">
-                {contrib.mappings.map((mp, i) => (
-                  <div key={i} className="rounded-xl border border-gray-100 p-3">
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="font-mono text-[11px] text-gray-400">{mp.rawField}</span>
-                      <span className="text-gray-700 truncate">{mp.rawValue}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <ArrowDown size={12} className="text-indigo-400" />
-                      <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">{mp.field}</span>
-                      <span className="text-xs font-semibold text-gray-800">{mp.normalized}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 gap-1.5">
-                {contrib.signals.map((s, i) => (
-                  <div key={i} className="bg-gray-50 rounded-lg px-2.5 py-1.5">
-                    <p className="text-[9px] text-gray-400">{s.label}</p>
-                    <p className="text-[11px] font-medium text-gray-700 truncate">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        })}
-
-        {/* 표준 규격 JSON */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <button onClick={() => setShowJson((v) => !v)} className="flex items-center gap-1 text-[11px] font-semibold text-gray-400">
-            {showJson ? <ChevronUp size={13} /> : <ChevronDown size={13} />} 표준 규격 원본(JSON) {showJson ? '접기' : '보기'}
-          </button>
-          {showJson && (
-            <pre className="text-[10px] leading-relaxed bg-gray-900 text-gray-100 rounded-xl p-3 overflow-x-auto mt-2">
-{JSON.stringify({ spec: profile.spec, sources: profile.sources, canonical: c, networkReach: profile.networkReach }, null, 2)}
-            </pre>
-          )}
+            )
+          })}
         </div>
       </div>
 

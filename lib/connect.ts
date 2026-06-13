@@ -26,11 +26,11 @@ export const PROVIDERS: ProviderMeta[] = [
   { key: 'github',   name: 'GitHub',   tagline: '개발 활동을 분석해요', brand: '#181717' },
 ]
 
-// 소스별 기여 (어디서 무엇이 왔는지)
+// 소스별 기여 (어디서 무엇을 알아냈는지)
 export interface SourceContribution {
   source: Provider
-  signals: { label: string; value: string }[]
-  mappings: { rawField: string; rawValue: string; field: string; normalized: string }[]
+  summary: string                      // 사용자용 한 줄 요약
+  highlights: string[]                 // 이 소스가 알려준 핵심 (자연어)
 }
 
 // ── 우리 표준 프로필 규격 (JobFit Unified Profile v1) ──────────
@@ -80,17 +80,12 @@ const DATA: Record<Provider, ProviderData> = {
     },
     networkReach: { connections: 842, companies: 31 },
     contribution: {
-      signals: [
-        { label: 'Headline', value: 'Senior Product Manager' },
-        { label: 'Positions', value: '3개 경력 (6.5년)' },
-        { label: 'Endorsed Skills', value: 'Product, Analytics, Agile' },
-        { label: 'Connections', value: '842명' },
-      ],
-      mappings: [
-        { rawField: 'headline', rawValue: 'Senior Product Manager', field: 'jobCategory + seniority', normalized: '기획·PM · 시니어' },
-        { rawField: 'positions[]', rawValue: '3개 경력 6.5년', field: 'experienceYears + careerPath', normalized: '5~7년 · 3개 궤적' },
-        { rawField: 'endorsements', rawValue: 'Product/Analytics/Agile', field: 'skills', normalized: '프로덕트 기획 등' },
-        { rawField: 'connections', rawValue: '842', field: 'networkReach', normalized: '인맥 842 · 회사 31' },
+      summary: '경력과 직무, 인맥을 파악했어요',
+      highlights: [
+        '시니어 프로덕트 매니저로 6.5년 경력',
+        '3개 회사를 거친 커리어 궤적',
+        '프로덕트·데이터 분석 등 검증된 스킬',
+        '업계 인맥 842명',
       ],
     },
     baseCompleteness: 88,
@@ -109,17 +104,12 @@ const DATA: Record<Provider, ProviderData> = {
     },
     networkReach: { connections: 1204, companies: 47 },
     contribution: {
-      signals: [
-        { label: '내 최신 명함', value: '영업총괄 / 중견 SaaS' },
-        { label: '명함 이력', value: '3개 회사 (직함 변화)' },
-        { label: '보유 명함', value: '214장 · 47개 회사' },
-        { label: '인맥 밀집 회사', value: '토스·카카오·쿠팡' },
-      ],
-      mappings: [
-        { rawField: '내 명함.직함', rawValue: '영업총괄', field: 'jobCategory + seniority', normalized: '영업·BD · 리드' },
-        { rawField: '명함 이력', rawValue: '3개 회사 직함 변화', field: 'careerPath + experienceYears', normalized: '7~10년 · 3개 궤적' },
-        { rawField: '명함첩(214장)', rawValue: '47개 회사 분포', field: 'networkReach', normalized: '인맥 1,204 · 회사 47' },
-        { rawField: '명함 회사 규모', rawValue: '중견 SaaS', field: 'companySize', normalized: '중견기업' },
+      summary: '명함첩에서 커리어와 인맥을 찾았어요',
+      highlights: [
+        '명함 직함 변화로 본 영업 리드 커리어',
+        '명함첩 214장 · 47개 회사 인맥',
+        '토스·카카오·쿠팡에 인맥 밀집',
+        '레퍼럴(지인 추천) 가능성 높은 회사 다수',
       ],
     },
     baseCompleteness: 92,
@@ -138,17 +128,12 @@ const DATA: Record<Provider, ProviderData> = {
     },
     networkReach: null,
     contribution: {
-      signals: [
-        { label: 'Top Languages', value: 'TypeScript 41% · Go 22%' },
-        { label: 'Public Repos', value: '38개' },
-        { label: 'Contributions', value: '최근 1년 1,820' },
-        { label: 'Org', value: '스타트업 1곳' },
-      ],
-      mappings: [
-        { rawField: 'languages', rawValue: 'TypeScript/Go/React', field: 'skills', normalized: 'TypeScript 등' },
-        { rawField: 'repos.topics', rawValue: 'backend/api/cloud', field: 'jobCategory', normalized: '개발·엔지니어' },
-        { rawField: 'contributions', rawValue: '연 1,820 (활발)', field: 'seniority + experienceYears', normalized: '미들 · 3~5년' },
-        { rawField: 'orgs', rawValue: '스타트업 1곳', field: 'currentCompany', normalized: '스타트업 (시리즈 B)' },
+      summary: '실제 개발 스킬과 활동량을 분석했어요',
+      highlights: [
+        'TypeScript·React·Node.js 등 실사용 스킬',
+        '최근 1년 기여 1,820건의 활발한 활동',
+        '백엔드 중심 풀스택 역량',
+        '미들급 엔지니어 수준으로 추정',
       ],
     },
     baseCompleteness: 76,
