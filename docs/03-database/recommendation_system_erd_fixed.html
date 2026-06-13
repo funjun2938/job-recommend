@@ -1,0 +1,758 @@
+
+<style>
+#erd-wrap { padding: 8px 0; }
+.domain-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; padding: 0 4px; }
+.domain-tab {
+  padding: 5px 12px; border-radius: 20px; border: 1px solid var(--color-border-secondary);
+  background: var(--color-background-secondary); color: var(--color-text-secondary);
+  font-size: 12px; cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.domain-tab.active {
+  background: var(--color-text-primary); color: var(--color-background-primary);
+  border-color: var(--color-text-primary);
+}
+#erd-container svg { width: 100% !important; max-width: 100%; }
+.domain-info { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 12px; padding: 0 4px; }
+</style>
+<div id="erd-wrap">
+  <div class="domain-tabs" id="tabs"></div>
+  <div class="domain-info" id="domain-info"></div>
+  <div id="erd-container"></div>
+</div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#2a2a28' : '#f4f2ec',
+    primaryBorderColor: dark ? '#5f5e5a' : '#b4b2a9',
+    primaryTextColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+
+const domains = [
+  {
+    name: '사용자 프로필',
+    count: '15개 테이블',
+    diagram: `erDiagram
+    UserProfile {
+      string user_id PK
+      string 거주지
+      int 총경력연차
+      int 현재연봉
+      int 희망연봉
+      string 이직의향상태
+      int 프로필완성도
+    }
+    BusinessCard {
+      string 명함id PK
+      string user_id FK
+      string 회사명
+      string 직군
+      string 상태
+    }
+    UserPreference {
+      string preference_id PK
+      string user_id FK
+      string 희망직군
+      string 희망근무형태
+    }
+    Skill {
+      string skill_id PK
+      string skill_name
+      string skill_category
+      string parent_skill_id
+    }
+    UserSkill {
+      string user_skill_id PK
+      string user_id FK
+      string skill_id FK
+      string 숙련도
+      int 사용연차
+    }
+    UserCareer {
+      string career_id PK
+      string user_id FK
+      string company_id FK
+      string 직책
+      boolean 재직여부
+    }
+    UserEducation {
+      string education_id PK
+      string user_id FK
+      string 학위
+      string 졸업상태
+    }
+    UserResume {
+      string resume_id PK
+      string user_id FK
+      string 파싱상태
+      boolean 대표이력서
+    }
+    UserCertificate {
+      string user_certificate_id PK
+      string user_id FK
+      string 자격증명
+      string 인증상태
+    }
+    UserLanguage {
+      string user_language_id PK
+      string user_id FK
+      string 언어
+      string 수준
+    }
+    UserProject {
+      string project_id PK
+      string user_id FK
+      string 프로젝트명
+      string 공개여부
+    }
+    UserPortfolio {
+      string portfolio_id PK
+      string user_id FK
+      string 포트폴리오유형
+      boolean 대표여부
+    }
+    CareerGoal {
+      string goal_id PK
+      string user_id FK
+      string 이직이유
+      string 목표회사유형
+    }
+    JobReadiness {
+      string readiness_id PK
+      string user_id FK
+      string 이직준비단계
+      int 이직준비도점수
+    }
+    UserActivity {
+      string activity_id PK
+      string user_id FK
+      string 활동유형
+      int 누적포인트
+    }
+    UserProfile ||--o{ BusinessCard : "has"
+    UserProfile ||--o{ UserPreference : "has"
+    UserProfile ||--o{ UserSkill : "has"
+    UserProfile ||--o{ UserCareer : "has"
+    UserProfile ||--o{ UserEducation : "has"
+    UserProfile ||--o{ UserResume : "has"
+    UserProfile ||--o{ UserCertificate : "has"
+    UserProfile ||--o{ UserLanguage : "has"
+    UserProfile ||--o{ UserProject : "has"
+    UserProfile ||--o{ UserPortfolio : "has"
+    UserProfile ||--o{ CareerGoal : "has"
+    UserProfile ||--o{ JobReadiness : "has"
+    UserProfile ||--o{ UserActivity : "has"
+    Skill ||--o{ UserSkill : "used in"`
+  },
+  {
+    name: '채용 공고',
+    count: '7개 테이블',
+    diagram: `erDiagram
+    Company {
+      string company_id PK
+      string 회사명
+      string 산업군
+      string 회사규모
+      int 직원수
+      boolean 상장여부
+    }
+    JobRole {
+      string job_role_id PK
+      string 직군
+      string 직무
+      string 표준직무명
+    }
+    JobRoleMapping {
+      string mapping_id PK
+      string job_role_id FK
+      string 원본직무명
+      float 신뢰도
+    }
+    JobPosting {
+      string job_posting_id PK
+      string company_id FK
+      string job_role_id FK
+      string 공고제목
+      string 근무형태
+      int 연봉최소
+      int 연봉최대
+      string 공고상태
+    }
+    PostingSkill {
+      string posting_skill_id PK
+      string job_posting_id FK
+      string skill_id FK
+      boolean 필수여부
+      int 중요도
+    }
+    Application {
+      string application_id PK
+      string user_id FK
+      string job_posting_id FK
+      string company_id FK
+      string 전형상태
+      boolean 입사여부
+    }
+    JobView {
+      string job_view_id PK
+      string user_id FK
+      string job_posting_id FK
+      int 체류시간
+      string 유입경로
+    }
+    Company ||--o{ JobPosting : "posts"
+    JobRole ||--o{ JobPosting : "categorizes"
+    JobRole ||--o{ JobRoleMapping : "maps"
+    JobPosting ||--o{ PostingSkill : "requires"
+    JobPosting ||--o{ Application : "applied"
+    JobPosting ||--o{ JobView : "viewed"`
+  },
+  {
+    name: '추천 시스템',
+    count: '9개 테이블',
+    diagram: `erDiagram
+    Recommendation {
+      string recommendation_id PK
+      string user_id FK
+      string job_posting_id FK
+      float 추천점수
+      float 스킬매칭점수
+      float 경력매칭점수
+      float 연봉매칭점수
+      string 추천모델버전
+    }
+    RecommendModel {
+      string model_id PK
+      string model_name
+      string model_version
+      string 알고리즘유형
+      string 상태
+    }
+    RecommendScore {
+      string score_id PK
+      string recommendation_id FK
+      string 점수항목
+      float 원점수
+      float 가중치
+      float 최종점수
+    }
+    RecommendFeedback {
+      string feedback_id PK
+      string user_id FK
+      string recommendation_id FK
+      string feedback_type
+      date created_at
+    }
+    FeatureSnapshot {
+      string snapshot_id PK
+      string recommendation_id FK
+      string 사용피처JSON
+      string 생성모델버전
+    }
+    Experiment {
+      string experiment_id PK
+      string 실험명
+      float 대상사용자비율
+      string 실험상태
+    }
+    ExperimentGroup {
+      string group_id PK
+      string experiment_id FK
+      string 그룹명
+      float 노출비율
+    }
+    ModelMetric {
+      string metric_id PK
+      string model_id FK
+      int 노출수
+      int 클릭수
+      float CTR
+      float 지원전환율
+    }
+    BehaviorLog {
+      string event_id PK
+      string user_id FK
+      string job_posting_id FK
+      string event_type
+      string device
+    }
+    Recommendation ||--o{ RecommendScore : "has"
+    Recommendation ||--o{ RecommendFeedback : "receives"
+    Recommendation ||--o{ FeatureSnapshot : "has"
+    RecommendModel ||--o{ ModelMetric : "measured"
+    Experiment ||--o{ ExperimentGroup : "has"`
+  },
+  {
+    name: '관리자/기업',
+    count: '7개 테이블',
+    diagram: `erDiagram
+    AdminRole {
+      string role_id PK
+      string 권한명
+      string 권한상태
+    }
+    AdminAccount {
+      string admin_id PK
+      string role_id FK
+      string 이름
+      string 이메일
+      string 계정상태
+      boolean twoFA사용
+    }
+    AdminMenu {
+      string menu_id PK
+      string 상위메뉴ID
+      string 메뉴명
+      string 메뉴코드
+    }
+    AdminPermission {
+      string permission_id PK
+      string role_id FK
+      string menu_id FK
+      boolean 조회권한
+      boolean 생성권한
+      boolean 수정권한
+      boolean 삭제권한
+    }
+    CompanyManager {
+      string manager_id PK
+      string company_id FK
+      string 이름
+      string 담당업무
+      string 계정상태
+    }
+    ManagerPermission {
+      string perm_id PK
+      string manager_id FK
+      string company_id FK
+      boolean 공고등록권한
+      boolean 제안발송권한
+    }
+    CompanyOffer {
+      string offer_id PK
+      string company_id FK
+      string manager_id FK
+      string user_id FK
+      string job_posting_id FK
+      string 제안상태
+    }
+    AdminRole ||--o{ AdminAccount : "assigned"
+    AdminRole ||--o{ AdminPermission : "has"
+    AdminMenu ||--o{ AdminPermission : "in"
+    CompanyManager ||--o{ ManagerPermission : "has"
+    CompanyManager ||--o{ CompanyOffer : "sends"`
+  },
+  {
+    name: '결제/정산',
+    count: '12개 테이블',
+    diagram: `erDiagram
+    Plan {
+      string plan_id PK
+      string 요금제코드
+      int 월이용료
+      int 연이용료
+      float 성공수수료율
+    }
+    Contract {
+      string contract_id PK
+      string company_id FK
+      string 계약유형
+      string 과금방식
+      string 계약상태
+    }
+    Subscription {
+      string subscription_id PK
+      string company_id FK
+      string plan_id FK
+      string contract_id FK
+      date 구독종료일
+      string 구독상태
+    }
+    PaymentMethod {
+      string payment_method_id PK
+      string company_id FK
+      string 결제수단유형
+      boolean 기본결제수단
+    }
+    Invoice {
+      string invoice_id PK
+      string company_id FK
+      string subscription_id FK
+      int 총청구금액
+      string 청구상태
+    }
+    InvoiceItem {
+      string invoice_item_id PK
+      string invoice_id FK
+      string 과금유형
+      int 단가
+      int 수량
+    }
+    Payment {
+      string payment_id PK
+      string company_id FK
+      string invoice_id FK
+      string payment_method_id FK
+      int 총결제금액
+      string 결제상태
+    }
+    Refund {
+      string refund_id PK
+      string payment_id FK
+      int 환불금액
+      string 환불상태
+    }
+    TaxInvoice {
+      string tax_invoice_id PK
+      string payment_id FK
+      string invoice_id FK
+      string 발행상태
+    }
+    SuccessFee {
+      string success_fee_id PK
+      string company_id FK
+      string application_id FK
+      int 성공보수금액
+      string 상태
+    }
+    Settlement {
+      string settlement_id PK
+      string company_id FK
+      int 총결제금액
+      int 미수금액
+      string 정산상태
+    }
+    Credit {
+      string credit_id PK
+      string company_id FK
+      string 크레딧유형
+      int 잔여수량
+      string 상태
+    }
+    Plan ||--o{ Subscription : "used"
+    Contract ||--o{ Subscription : "covered"
+    Subscription ||--o{ Invoice : "generates"
+    Invoice ||--o{ InvoiceItem : "contains"
+    Invoice ||--o{ Payment : "paid"
+    PaymentMethod ||--o{ Payment : "used"
+    Payment ||--o{ Refund : "refunded"
+    Payment ||--o{ TaxInvoice : "issued"`
+  },
+  {
+    name: '보안/개인정보',
+    count: '8개 테이블',
+    diagram: `erDiagram
+    UserProfile {
+      string user_id PK
+      string 이름
+    }
+    Terms {
+      string terms_id PK
+      string 약관유형
+      string 버전
+      date 시행일
+      string 상태
+    }
+    ConsentHistory {
+      string consent_id PK
+      string user_id FK
+      string 동의항목
+      boolean 동의여부
+      date 동의일시
+    }
+    TermsAgreement {
+      string agreement_id PK
+      string user_id FK
+      string terms_id FK
+      boolean 동의여부
+      date 동의일시
+    }
+    AccessLog {
+      string log_id PK
+      string user_id FK
+      string accessor_type
+      string 접근항목
+      string 접근결과
+    }
+    DeleteRequest {
+      string request_id PK
+      string user_id FK
+      string 요청유형
+      string 처리상태
+    }
+    MaskingPolicy {
+      string policy_id PK
+      string 대상테이블
+      string 마스킹방식
+      string 적용대상
+    }
+    BatchJob {
+      string batch_job_id PK
+      string 작업유형
+      int 처리건수
+      string 작업상태
+    }
+    ErrorLog {
+      string error_log_id PK
+      string user_id FK
+      string 발생위치
+      string 처리상태
+    }
+    UserProfile ||--o{ ConsentHistory : "has"
+    UserProfile ||--o{ TermsAgreement : "agrees"
+    UserProfile ||--o{ AccessLog : "logged"
+    UserProfile ||--o{ DeleteRequest : "requests"
+    Terms ||--o{ TermsAgreement : "agreed"`
+  },
+  {
+    name: '커리어 인텔리전스',
+    count: '6개 테이블',
+    diagram: `erDiagram
+    JobRole {
+      string job_role_id PK
+      string 직군
+      string 직무
+    }
+    Skill {
+      string skill_id PK
+      string skill_name
+      string skill_category
+    }
+    SalaryBenchmark {
+      string benchmark_id PK
+      string job_role_id FK
+      string 경력구간
+      int 연봉중위값
+      int 연봉평균
+      string 데이터출처
+    }
+    SkillTrend {
+      string trend_id PK
+      string skill_id FK
+      int 공고등장횟수
+      int 연봉프리미엄
+      string 트렌드방향
+    }
+    HiringTrend {
+      string hiring_trend_id PK
+      string 산업군
+      int 신규공고수
+      string 채용온도
+    }
+    SkillGapAnalysis {
+      string gap_analysis_id PK
+      string user_id FK
+      string target_job_role_id FK
+      float 보유스킬매칭률
+      int 예상준비기간
+    }
+    CompanyReputation {
+      string reputation_id PK
+      string company_id FK
+      float 종합평점
+      float 워라밸점수
+      int 리뷰수
+    }
+    CareerPath {
+      string path_id PK
+      string from_job_role_id FK
+      string to_job_role_id FK
+      int 이동빈도
+      string 이동유형
+    }
+    JobRole ||--o{ SalaryBenchmark : "benchmarked"
+    Skill ||--o{ SkillTrend : "tracked"
+    JobRole ||--o{ SkillGapAnalysis : "target"
+    JobRole ||--o{ CareerPath : "from-to"`
+  },
+  {
+    name: '소셜/네트워크',
+    count: '7개 테이블',
+    diagram: `erDiagram
+    UserProfile {
+      string user_id PK
+      string 이름
+    }
+    SocialAccount {
+      string social_account_id PK
+      string user_id FK
+      string 플랫폼
+      date 마지막동기화
+      string 연동상태
+    }
+    UserConnection {
+      string connection_id PK
+      string from_user_id FK
+      string to_user_id FK
+      string 연결유형
+      string 연결강도
+      string 연결상태
+    }
+    CardExchange {
+      string card_exchange_id PK
+      string from_user_id FK
+      string to_user_id FK
+      string 교환방식
+      date 교환일시
+    }
+    NetworkSignal {
+      string network_signal_id PK
+      string user_id FK
+      string company_id FK
+      string 신호유형
+      float 신호강도점수
+    }
+    LinkedInImport {
+      string li_import_id PK
+      string user_id FK
+      string social_account_id FK
+      string 프로필매핑상태
+    }
+    RememberImport {
+      string rm_import_id PK
+      string user_id FK
+      string social_account_id FK
+      int 임포트된명함수
+      string 임포트상태
+    }
+    ConnectionSuggestion {
+      string suggestion_id PK
+      string user_id FK
+      string suggested_user_id FK
+      string 추천근거
+      float 추천점수
+      string 사용자반응
+    }
+    UserProfile ||--o{ SocialAccount : "connects"
+    UserProfile ||--o{ UserConnection : "from"
+    UserProfile ||--o{ CardExchange : "exchanges"
+    UserProfile ||--o{ NetworkSignal : "generates"
+    SocialAccount ||--o{ LinkedInImport : "imports"
+    SocialAccount ||--o{ RememberImport : "imports"
+    UserProfile ||--o{ ConnectionSuggestion : "suggested"`
+  },
+  {
+    name: '알림/개인화',
+    count: '6개 테이블',
+    diagram: `erDiagram
+    UserProfile {
+      string user_id PK
+      string 이름
+    }
+    NotifTemplate {
+      string template_id PK
+      string 템플릿명
+      string 알림유형
+      string 채널
+      string 타겟세그먼트
+      string 상태
+    }
+    NotifPreference {
+      string pref_id PK
+      string user_id FK
+      string 알림유형
+      string 허용채널
+      boolean 수신동의
+    }
+    OptimalSendTime {
+      string send_time_id PK
+      string user_id FK
+      string 채널
+      float 평균오픈율
+      string 모델신뢰도
+    }
+    NotifHistory {
+      string notification_id PK
+      string user_id FK
+      string template_id FK
+      string 발송채널
+      string 발송상태
+      date 발송일시
+    }
+    ChannelFatigue {
+      string fatigue_id PK
+      string user_id FK
+      string 채널
+      int 연속무반응일수
+      string 피로도등급
+    }
+    UserSegment {
+      string segment_id PK
+      string user_id FK
+      string 이직의향세그먼트
+      string 활동세그먼트
+      int 이직준비도점수
+    }
+    UserProfile ||--o{ NotifPreference : "sets"
+    UserProfile ||--o{ OptimalSendTime : "has"
+    UserProfile ||--o{ NotifHistory : "notified"
+    UserProfile ||--o{ ChannelFatigue : "tracked"
+    UserProfile ||--o{ UserSegment : "segmented"
+    NotifTemplate ||--o{ NotifHistory : "used"`
+  }
+];
+
+let current = 0;
+
+async function render(idx) {
+  current = idx;
+  document.querySelectorAll('.domain-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  document.getElementById('domain-info').textContent = domains[idx].count;
+  const container = document.getElementById('erd-container');
+  container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--color-text-tertiary);font-size:13px;">렌더링 중...</div>';
+  try {
+    const id = 'erd-svg-' + idx + '-' + Date.now();
+    const { svg } = await mermaid.render(id, domains[idx].diagram);
+    container.innerHTML = svg;
+    const svgEl = container.querySelector('svg');
+    if (svgEl) svgEl.style.maxWidth = '100%';
+
+    container.querySelectorAll('svg .node').forEach(node => {
+      const firstPath = node.querySelector('path[d]');
+      if (!firstPath) return;
+      const d = firstPath.getAttribute('d');
+      const nums = d.match(/-?[\d.]+/g)?.map(Number);
+      if (!nums || nums.length < 8) return;
+      const xs = [nums[0], nums[2], nums[4], nums[6]];
+      const ys = [nums[1], nums[3], nums[5], nums[7]];
+      const x = Math.min(...xs), y = Math.min(...ys);
+      const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x', x); rect.setAttribute('y', y);
+      rect.setAttribute('width', w); rect.setAttribute('height', h);
+      rect.setAttribute('rx', '8');
+      for (const a of ['fill','stroke','stroke-width','class','style']) {
+        if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+      }
+      firstPath.replaceWith(rect);
+    });
+    container.querySelectorAll('svg .row-rect-odd path, svg .row-rect-even path').forEach(p => {
+      p.setAttribute('stroke','none');
+    });
+  } catch(e) {
+    container.innerHTML = '<div style="padding:20px;color:var(--color-text-danger);font-size:13px;">오류: ' + e.message + '</div>';
+  }
+}
+
+const tabsEl = document.getElementById('tabs');
+domains.forEach((d,i) => {
+  const btn = document.createElement('button');
+  btn.className = 'domain-tab' + (i===0 ? ' active' : '');
+  btn.textContent = d.name;
+  btn.onclick = () => render(i);
+  tabsEl.appendChild(btn);
+});
+
+render(0);
+</script>

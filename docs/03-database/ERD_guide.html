@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>이직 추천 서비스 — ERD 설명 가이드</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --indigo:#4f46e5; --violet:#7c3aed; --ink:#0f172a; --muted:#64748b;
+    --line:#e2e8f0; --bg:#f8fafc; --amber:#d97706; --green:#16a34a;
+    --surveyc:#4f46e5; --netc:#7c3aed; --careerc:#d97706; --scorec:#16a34a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.6;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px;}
+
+  /* 헤더 */
+  header{
+    background:linear-gradient(135deg,#1e1b4b 0%,#4c1d95 100%);
+    color:#fff; padding:64px 0 56px;
+  }
+  header .wrap{display:block;}
+  .badge{display:inline-block; background:rgba(255,255,255,.15); color:#ddd6fe;
+    padding:.35rem .9rem; border-radius:999px; font-size:.8rem; font-weight:800; letter-spacing:.05em; margin-bottom:1.2rem;}
+  header h1{font-size:clamp(2rem,5vw,3rem); font-weight:900; letter-spacing:-.02em; line-height:1.1;}
+  header p{color:#c7d2fe; font-size:clamp(1rem,2vw,1.2rem); margin-top:1rem; max-width:62ch;}
+  .toc{display:flex; gap:.6rem; flex-wrap:wrap; margin-top:2rem;}
+  .toc a{background:rgba(255,255,255,.1); color:#fff; text-decoration:none; padding:.5rem .9rem;
+    border-radius:10px; font-size:.85rem; font-weight:700; border:1px solid rgba(255,255,255,.18); transition:.15s;}
+  .toc a:hover{background:rgba(255,255,255,.22);}
+
+  /* 섹션 */
+  section{padding:52px 0; border-bottom:1px solid var(--line);}
+  .kicker{font-size:.8rem; font-weight:800; letter-spacing:.08em; color:var(--violet); text-transform:uppercase; margin-bottom:.6rem;}
+  h2{font-size:clamp(1.5rem,3.5vw,2.1rem); font-weight:900; letter-spacing:-.02em; margin-bottom:.5rem;}
+  h2 .em{color:var(--violet);}
+  .sub{color:var(--muted); font-size:1.05rem; margin-bottom:1.8rem; max-width:70ch;}
+  h3{font-size:1.2rem; font-weight:800; margin:0 0 .4rem;}
+
+  /* 한 줄 요약 콜아웃 */
+  .callout{background:#fff; border:1px solid var(--line); border-left:5px solid var(--violet);
+    border-radius:14px; padding:1.2rem 1.4rem; margin:1.4rem 0; box-shadow:0 2px 12px rgba(15,23,42,.04);}
+  .callout b{color:var(--violet);}
+
+  /* 2축 카드 */
+  .axes{display:grid; grid-template-columns:1fr 1fr; gap:1.2rem;}
+  .axis{background:#fff; border:1px solid var(--line); border-radius:18px; padding:1.6rem; box-shadow:0 4px 18px rgba(15,23,42,.05);}
+  .axis.survey{border-top:5px solid var(--surveyc);}
+  .axis.network{border-top:5px solid var(--netc);}
+  .axis .tag{font-size:.75rem; font-weight:800; padding:.25rem .7rem; border-radius:999px; display:inline-block;}
+  .axis.survey .tag{background:#eef2ff; color:var(--surveyc);}
+  .axis.network .tag{background:#ede9fe; color:var(--netc);}
+  .axis ul{list-style:none; margin-top:1rem; display:flex; flex-direction:column; gap:.6rem;}
+  .axis li{display:flex; gap:.6rem; font-size:.95rem;}
+  .axis li code{background:#f1f5f9; padding:.05rem .4rem; border-radius:6px; font-size:.82rem; color:#334155; font-family:ui-monospace,monospace;}
+  .axis li .d{color:var(--violet); font-weight:900; flex-shrink:0;}
+
+  /* mermaid 박스 */
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:18px; padding:1.4rem; overflow:auto; box-shadow:0 4px 18px rgba(15,23,42,.05);}
+  .mermaid{display:flex; justify-content:center;}
+  .diagram .cap{text-align:center; color:var(--muted); font-size:.85rem; margin-top:.8rem;}
+
+  /* 테이블 카드 그리드 */
+  .tables{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1.1rem; margin-top:1rem;}
+  .tcard{background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 2px 12px rgba(15,23,42,.04);}
+  .tcard .head{padding:.9rem 1.1rem; display:flex; align-items:center; gap:.6rem; color:#fff; font-weight:800;}
+  .tcard .head .ico{font-size:1.1rem;}
+  .tcard.survey .head{background:var(--surveyc);}
+  .tcard.network .head{background:var(--netc);}
+  .tcard.score .head{background:var(--scorec);}
+  .tcard.util .head{background:#475569;}
+  .tcard .body{padding:.6rem 1.1rem 1rem;}
+  .tcard .role{font-size:.85rem; color:var(--muted); margin:.5rem 0 .8rem;}
+  .tcard table{width:100%; border-collapse:collapse; font-size:.8rem;}
+  .tcard td{padding:.32rem .2rem; border-bottom:1px solid #f1f5f9; vertical-align:top;}
+  .tcard td.k{font-family:ui-monospace,monospace; color:#334155; font-weight:600; white-space:nowrap; padding-right:.6rem;}
+  .tcard td.v{color:var(--muted);}
+  .pk{font-size:.62rem; font-weight:800; color:#fff; background:var(--amber); padding:.05rem .35rem; border-radius:5px; margin-left:.3rem;}
+  .fk{font-size:.62rem; font-weight:800; color:#fff; background:#0ea5e9; padding:.05rem .35rem; border-radius:5px; margin-left:.3rem;}
+
+  /* 관계 설명 */
+  .rels{display:flex; flex-direction:column; gap:.7rem; margin-top:1rem;}
+  .rel{background:#fff; border:1px solid var(--line); border-radius:12px; padding:.9rem 1.1rem; display:flex; gap:.9rem; align-items:flex-start;}
+  .rel .pair{font-family:ui-monospace,monospace; font-size:.8rem; font-weight:700; color:var(--violet); white-space:nowrap; flex-shrink:0; min-width:230px;}
+  .rel .desc{font-size:.9rem; color:#334155;}
+  @media(max-width:720px){ .rel{flex-direction:column; gap:.3rem;} .rel .pair{min-width:0;} }
+
+  /* 흐름 */
+  .flowbox{background:#fff; border:1px solid var(--line); border-radius:18px; padding:1.6rem; box-shadow:0 4px 18px rgba(15,23,42,.05);}
+
+  /* 점수 공식 */
+  .formula{background:linear-gradient(135deg,#1e1b4b,#4c1d95); color:#fff; border-radius:18px; padding:2rem; text-align:center;}
+  .formula .eq{font-size:clamp(1rem,2.4vw,1.5rem); font-weight:800; line-height:2; font-family:ui-monospace,monospace;}
+  .formula .eq .s{color:#a5b4fc;} .formula .eq .n{color:#c4b5fd;} .formula .eq .c{color:#fbbf24;} .formula .eq .f{color:#86efac;}
+  .wbar{display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.6rem;}
+  .wbar .w{background:rgba(255,255,255,.08); border-radius:12px; padding:1rem;}
+  .wbar .w .pct{font-size:1.8rem; font-weight:900;}
+  .wbar .w.s .pct{color:#a5b4fc;} .wbar .w.n .pct{color:#c4b5fd;} .wbar .w.c .pct{color:#fbbf24;}
+  .wbar .w .lbl{font-size:.8rem; color:#ddd6fe; margin-top:.2rem;}
+
+  footer{padding:40px 0 60px; color:var(--muted); font-size:.85rem; text-align:center;}
+  .legend{display:flex; gap:1.2rem; flex-wrap:wrap; margin-top:1rem;}
+  .legend span{display:flex; align-items:center; gap:.4rem; font-size:.85rem; font-weight:700;}
+  .legend .sw{width:14px; height:14px; border-radius:4px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="badge">DATABASE · ERD 설명 가이드</span>
+    <h1>이직 추천 서비스 데이터 모델,<br/>5분 만에 이해하기</h1>
+    <p>조원 누구나 이 한 장으로 우리 DB가 어떻게 생겼고, 데이터가 어디서 와서 어떻게 추천이 되는지 알 수 있게 정리했어요.</p>
+    <div class="toc">
+      <a href="#big">한눈에 보기</a>
+      <a href="#axes">데이터 2축</a>
+      <a href="#diagram">전체 ERD</a>
+      <a href="#tables">테이블 14개</a>
+      <a href="#rels">관계 설명</a>
+      <a href="#flow">데이터 흐름</a>
+      <a href="#score">추천 점수</a>
+    </div>
+  </div>
+</header>
+
+<!-- 한눈에 보기 -->
+<section id="big">
+  <div class="wrap">
+    <div class="kicker">Overview</div>
+    <h2>핵심은 <span class="em">"데이터를 만드는"</span> 구조예요</h2>
+    <p class="sub">단순히 추천만 하는 게 아니라, 사용자가 정보를 넣어야 추천을 받는 <b>가치 교환</b>으로 외부에 없는 데이터를 모읍니다.
+    데이터는 크게 <b>두 군데</b>에서 들어오고, 마지막에 <b>하나의 추천 점수</b>로 합쳐집니다.</p>
+
+    <div class="callout">
+      📌 <b>딱 3줄 요약</b><br/>
+      ① 사용자가 직접 입력하는 <b>서베이 데이터</b> (실연봉·퇴사이유·회사 평판)<br/>
+      ② 명함첩에서 가져오는 <b>네트워크 데이터</b> (인맥 회사 맵 · 이직 이력)<br/>
+      ③ 둘을 합쳐 <b>recommendation_scores</b> 한 테이블에 최종 추천 점수로 저장
+    </div>
+
+    <div class="legend">
+      <span><span class="sw" style="background:var(--surveyc)"></span>서베이 축</span>
+      <span><span class="sw" style="background:var(--netc)"></span>명함첩 축</span>
+      <span><span class="sw" style="background:var(--scorec)"></span>추천 점수</span>
+      <span><span class="sw" style="background:#475569"></span>유틸/지원</span>
+    </div>
+  </div>
+</section>
+
+<!-- 데이터 2축 -->
+<section id="axes">
+  <div class="wrap">
+    <div class="kicker">Two Data Axes</div>
+    <h2>데이터는 <span class="em">두 군데</span>에서 들어와요</h2>
+    <p class="sub">왜 두 개냐? 설문만으로는 "내 인맥"이나 "비슷한 사람들의 실제 이직 경로"를 알 수 없기 때문이에요. (교수님 피드백 반영)</p>
+    <div class="axes">
+      <div class="axis survey">
+        <span class="tag">축 ① 서베이</span>
+        <h3 style="margin-top:.8rem;">사용자가 직접 입력</h3>
+        <p style="color:var(--muted); font-size:.92rem;">외부에 공개되지 않는 회사 내부 정보를 본인이 입력합니다.</p>
+        <ul>
+          <li><span class="d">▪</span><span><code>company_insights</code> — 실연봉·퇴사이유·장단점·NPS (핵심 자산)</span></li>
+          <li><span class="d">▪</span><span><code>company_reputation</code> — 회사별 평판 자동 집계</span></li>
+          <li><span class="d">▪</span><span><code>salary_benchmarks</code> — 직군·규모별 연봉 분포</span></li>
+        </ul>
+      </div>
+      <div class="axis network">
+        <span class="tag">축 ② 명함첩 (외부 연동)</span>
+        <h3 style="margin-top:.8rem;">리멤버 류에서 가져옴</h3>
+        <p style="color:var(--muted); font-size:.92rem;">명함첩을 연동하면 두 가지 새 데이터가 생깁니다.</p>
+        <ul>
+          <li><span class="d">▪</span><span><b>명함첩 = 인맥 회사 맵</b> → <code>company_network_edges</code> (레퍼럴 유망 회사)</span></li>
+          <li><span class="d">▪</span><span><b>명함 교체 = 그 사람의 이직</b> → <code>contact_transitions</code> + <code>career_paths</code></span></li>
+          <li><span class="d">▪</span><span>나와 비슷한 커리어를 탄 사람의 <b>다음 회사</b> 추천</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 전체 ERD -->
+<section id="diagram">
+  <div class="wrap">
+    <div class="kicker">Full ERD</div>
+    <h2>전체 관계도</h2>
+    <p class="sub">화살표는 테이블 간 연결을 뜻해요. 색이 다른 그룹(서베이/명함첩)이 마지막에 추천 점수로 모입니다.</p>
+    <div class="diagram">
+      <pre class="mermaid">
+erDiagram
+    user_profiles ||--o{ namecards : "명함첩 소유 (1:N)"
+    user_profiles ||--o{ recommendation_scores : "추천 결과 (1:N)"
+    namecards }o--|| company_network_edges : "회사 동시등장 = 네트워크"
+    namecards }o--|| contact_transitions : "명함 교체 = 이직 감지"
+    contact_transitions }o--|| company_network_edges : "이직 흐름 가중치"
+    contact_transitions }o--|| career_paths : "회사 시퀀스 누적"
+    company_insights }o--|| company_reputation : "회사별 평판 집계"
+    company_insights }o--|| salary_benchmarks : "직군+규모 연봉 집계"
+    recommendation_scores }o--|| company_reputation : "추천 회사 평판"
+
+    user_profiles {
+        uuid id PK
+        text current_company "내 현재 회사"
+        text namecard_provider "remember 등"
+        int namecard_count "명함 수"
+    }
+    namecards {
+        uuid id PK
+        uuid owner_id FK
+        text contact_hash "비식별 해시"
+        text company_name "회사=네트워크 노드"
+        text seniority "실무/리더/임원"
+    }
+    contact_transitions {
+        uuid id PK
+        text from_company "이전 회사"
+        text to_company "이직한 회사"
+        int observed_count "교차검증"
+    }
+    company_network_edges {
+        uuid id PK
+        text company_a "회사 A"
+        text company_b "회사 B"
+        int edge_weight "동시등장"
+        int transition_weight "이직흐름"
+    }
+    career_paths {
+        uuid id PK
+        text contact_hash "한 사람"
+        text_array company_seq "회사 궤적"
+        smallint total_moves "이직 횟수"
+    }
+    company_insights {
+        uuid id PK
+        text company_name "회사명"
+        int actual_salary "실연봉"
+        smallint nps_score "추천의향"
+    }
+    company_reputation {
+        uuid id PK
+        text company_name "회사명 UK"
+        decimal avg_nps "평균 NPS"
+        int insight_count "응답 수"
+    }
+    salary_benchmarks {
+        uuid id PK
+        text job_category "직군"
+        int salary_p50 "중앙값"
+    }
+    recommendation_scores {
+        uuid id PK
+        uuid user_id FK
+        text company_name "추천 회사"
+        decimal survey_fit "서베이 0~1"
+        decimal network_proximity "네트워크 0~1"
+        decimal career_similarity "경로 0~1"
+        decimal final_score "최종 점수"
+    }
+      </pre>
+      <p class="cap">↑ 자동 렌더링된 ERD (mermaid.ai에 붙여넣은 것과 동일)</p>
+    </div>
+  </div>
+</section>
+
+<!-- 테이블 14개 -->
+<section id="tables">
+  <div class="wrap">
+    <div class="kicker">Tables</div>
+    <h2>테이블 <span class="em">14개</span>, 카드로 설명</h2>
+    <p class="sub">색 = 어느 축에 속하는지. 각 카드는 "무슨 역할인지 + 대표 컬럼"을 보여줘요.</p>
+    <div class="tables">
+
+      <!-- 서베이 -->
+      <div class="tcard survey"><div class="head"><span class="ico">📋</span> company_insights</div>
+        <div class="body"><p class="role">사용자가 입력하는 회사 내부 정보. <b>가장 중요한 데이터 자산.</b></p>
+        <table>
+          <tr><td class="k">job_category</td><td class="v">직군</td></tr>
+          <tr><td class="k">actual_salary</td><td class="v">실연봉(만원)</td></tr>
+          <tr><td class="k">resignation_reasons</td><td class="v">이직 이유</td></tr>
+          <tr><td class="k">nps_score</td><td class="v">회사 추천의향 0~10</td></tr>
+        </table></div></div>
+
+      <div class="tcard survey"><div class="head"><span class="ico">⭐</span> company_reputation</div>
+        <div class="body"><p class="role">회사별 평판을 자동 집계 (트리거). 최소 3건 이상만 노출 → 익명성 보호.</p>
+        <table>
+          <tr><td class="k">company_name <span class="pk">UK</span></td><td class="v">회사명</td></tr>
+          <tr><td class="k">avg_nps</td><td class="v">평균 NPS</td></tr>
+          <tr><td class="k">insight_count</td><td class="v">누적 응답 수</td></tr>
+        </table></div></div>
+
+      <div class="tcard survey"><div class="head"><span class="ico">💰</span> salary_benchmarks</div>
+        <div class="body"><p class="role">직군·규모·경력별 연봉 분포(25/50/75 퍼센타일).</p>
+        <table>
+          <tr><td class="k">job_category</td><td class="v">직군</td></tr>
+          <tr><td class="k">salary_p50</td><td class="v">중앙값</td></tr>
+          <tr><td class="k">sample_count</td><td class="v">표본 수</td></tr>
+        </table></div></div>
+
+      <!-- 명함첩 -->
+      <div class="tcard network"><div class="head"><span class="ico">👤</span> user_profiles</div>
+        <div class="body"><p class="role">명함첩을 연동한 사용자. 서베이는 익명이지만 연동은 식별이 필요.</p>
+        <table>
+          <tr><td class="k">id <span class="pk">PK</span></td><td class="v">사용자 ID</td></tr>
+          <tr><td class="k">current_company</td><td class="v">현재 회사</td></tr>
+          <tr><td class="k">namecard_count</td><td class="v">보유 명함 수</td></tr>
+        </table></div></div>
+
+      <div class="tcard network"><div class="head"><span class="ico">📇</span> namecards</div>
+        <div class="body"><p class="role">명함 한 장 = 내가 아는 사람 1명 = <b>네트워크 노드</b>. 이름/연락처는 해시로만.</p>
+        <table>
+          <tr><td class="k">owner_id <span class="fk">FK</span></td><td class="v">명함첩 주인</td></tr>
+          <tr><td class="k">contact_hash</td><td class="v">연락처 해시</td></tr>
+          <tr><td class="k">company_name</td><td class="v">그 사람 회사</td></tr>
+        </table></div></div>
+
+      <div class="tcard network"><div class="head"><span class="ico">🔄</span> contact_transitions</div>
+        <div class="body"><p class="role">같은 사람 명함이 회사 A→B 로 바뀜 = <b>그 사람의 이직</b>.</p>
+        <table>
+          <tr><td class="k">from_company</td><td class="v">이전 회사</td></tr>
+          <tr><td class="k">to_company</td><td class="v">이직한 회사</td></tr>
+          <tr><td class="k">observed_count</td><td class="v">몇 명함첩서 관측</td></tr>
+        </table></div></div>
+
+      <div class="tcard network"><div class="head"><span class="ico">🕸️</span> company_network_edges</div>
+        <div class="body"><p class="role">회사 ↔ 회사 연결 강도. 같은 명함첩에 두 회사가 같이 있으면 가까운 사이.</p>
+        <table>
+          <tr><td class="k">company_a / b</td><td class="v">연결된 두 회사</td></tr>
+          <tr><td class="k">edge_weight</td><td class="v">동시 등장 횟수</td></tr>
+          <tr><td class="k">transition_weight</td><td class="v">이직 흐름 횟수</td></tr>
+        </table></div></div>
+
+      <div class="tcard network"><div class="head"><span class="ico">🌿</span> career_paths</div>
+        <div class="body"><p class="role">한 사람이 거쳐온 회사 순서. 비슷한 궤적인 사람의 "다음 회사"를 추천에 사용.</p>
+        <table>
+          <tr><td class="k">company_seq</td><td class="v">회사 시퀀스(과거→현재)</td></tr>
+          <tr><td class="k">total_moves</td><td class="v">이직 횟수</td></tr>
+        </table></div></div>
+
+      <!-- 점수 -->
+      <div class="tcard score"><div class="head"><span class="ico">🏆</span> recommendation_scores</div>
+        <div class="body"><p class="role"><b>최종 추천 점수.</b> 3개 축을 가중 합산해 회사별 점수로 저장.</p>
+        <table>
+          <tr><td class="k">survey_fit</td><td class="v">서베이 적합도 0~1</td></tr>
+          <tr><td class="k">network_proximity</td><td class="v">네트워크 근접도 0~1</td></tr>
+          <tr><td class="k">career_similarity</td><td class="v">경로 유사도 0~1</td></tr>
+          <tr><td class="k">final_score</td><td class="v">가중 합산 (자동계산)</td></tr>
+        </table></div></div>
+
+      <!-- 유틸 -->
+      <div class="tcard util"><div class="head"><span class="ico">🔔</span> alert_subscriptions</div>
+        <div class="body"><p class="role">채용공고 알림 신청 이메일.</p>
+        <table>
+          <tr><td class="k">email</td><td class="v">이메일</td></tr>
+          <tr><td class="k">timeline</td><td class="v">이직 시점</td></tr>
+        </table></div></div>
+
+      <div class="tcard util"><div class="head"><span class="ico">⚡</span> analysis_cache</div>
+        <div class="body"><p class="role">같은 입력엔 AI 재호출 없이 캐시 반환 → 비용 절감.</p>
+        <table>
+          <tr><td class="k">cache_key <span class="pk">UK</span></td><td class="v">입력 해시</td></tr>
+          <tr><td class="k">result_json</td><td class="v">분석 결과</td></tr>
+        </table></div></div>
+
+    </div>
+  </div>
+</section>
+
+<!-- 관계 설명 -->
+<section id="rels">
+  <div class="wrap">
+    <div class="kicker">Relationships</div>
+    <h2>관계, <span class="em">한 줄씩</span> 풀어보기</h2>
+    <p class="sub">화살표를 말로 바꾸면 이렇게 됩니다.</p>
+    <div class="rels">
+      <div class="rel"><span class="pair">user_profiles → namecards</span><span class="desc">사용자 1명이 명함 여러 장을 가짐 (1:N). 명함첩을 통째로 들고 있는 구조.</span></div>
+      <div class="rel"><span class="pair">namecards → company_network_edges</span><span class="desc">같은 명함첩에 든 회사들끼리 "동시 등장" 엣지를 자동으로 만들어요 (DB 트리거).</span></div>
+      <div class="rel"><span class="pair">namecards → contact_transitions</span><span class="desc">같은 연락처(contact_hash)의 회사가 바뀌면 "이직 이벤트"로 기록.</span></div>
+      <div class="rel"><span class="pair">contact_transitions → career_paths</span><span class="desc">그 사람의 이직들을 순서대로 모으면 커리어 궤적(회사 시퀀스)이 됨.</span></div>
+      <div class="rel"><span class="pair">company_insights → company_reputation</span><span class="desc">설문이 쌓일 때마다 회사별 평균 평판을 다시 계산 (트리거 자동 집계).</span></div>
+      <div class="rel"><span class="pair">user_profiles → recommendation_scores</span><span class="desc">사용자마다 회사별 최종 추천 점수를 저장 → 재현·AB 테스트·튜닝 가능.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 데이터 흐름 -->
+<section id="flow">
+  <div class="wrap">
+    <div class="kicker">Data Flow</div>
+    <h2>데이터가 <span class="em">추천이 되기까지</span></h2>
+    <p class="sub">두 축의 데이터가 어떻게 흘러서 최종 추천으로 합쳐지는지 흐름도예요.</p>
+    <div class="flowbox">
+      <pre class="mermaid">
+flowchart TD
+    subgraph A["축① 서베이"]
+      U[사용자 입력] --> CI[(company_insights)]
+      CI -->|트리거| CR[(company_reputation)]
+      CI -->|집계| SB[(salary_benchmarks)]
+    end
+    subgraph B["축② 명함첩 (외부 연동)"]
+      RM[리멤버 명함첩] --> NC[(namecards)]
+      NC -->|동시등장 트리거| NE[(company_network_edges)]
+      NC -->|회사 변경 감지| CT[(contact_transitions)]
+      CT -->|이직 흐름| NE
+      CT -->|궤적 누적| CP[(career_paths)]
+    end
+    CR -->|서베이 적합도| RS[(recommendation_scores)]
+    NE -->|네트워크 근접도| RS
+    CP -->|경로 유사도| RS
+    RS --> OUT([추천 결과 화면])
+
+    style A fill:#eef2ff,stroke:#4f46e5
+    style B fill:#ede9fe,stroke:#7c3aed
+    style RS fill:#dcfce7,stroke:#16a34a
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- 추천 점수 -->
+<section id="score">
+  <div class="wrap">
+    <div class="kicker">Recommendation Score</div>
+    <h2>최종 점수는 <span class="em">3개를 섞어서</span> 만들어요</h2>
+    <p class="sub">recommendation_scores 테이블의 final_score는 BEFORE INSERT 트리거가 자동으로 계산합니다.</p>
+    <div class="formula">
+      <div class="eq">
+        final_score =<br/>
+        <span class="s">서베이적합도 × 0.5</span> +
+        <span class="n">네트워크근접도 × 0.25</span> +
+        <span class="c">경로유사도 × 0.25</span>
+      </div>
+      <div class="wbar">
+        <div class="w s"><div class="pct">50%</div><div class="lbl">서베이 적합도<br/>(직군·경력·스킬)</div></div>
+        <div class="w n"><div class="pct">25%</div><div class="lbl">네트워크 근접도<br/>(명함첩 인맥)</div></div>
+        <div class="w c"><div class="pct">25%</div><div class="lbl">경로 유사도<br/>(비슷한 사람의 선택)</div></div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:1.6rem;">
+      💡 <b>가중치는 바꿀 수 있어요.</b> 각 행에 weight_survey/network/career 컬럼이 따로 있어서,
+      나중에 "네트워크를 더 중요하게" 같은 튜닝이나 A/B 테스트가 가능합니다.
+    </div>
+  </div>
+</section>
+
+<section id="v3">
+  <div class="wrap">
+    <div class="kicker">v3 · Enterprise Model</div>
+    <h2><span class="em">78개 테이블</span> 풀 스키마로 확장</h2>
+    <p class="sub">위 핵심 모델을 9개 도메인 · 78개 테이블의 본격 운영 스키마로 확장했어요. 아래 뷰어로 도메인별 ERD와 컬럼 상세를 확인하세요.</p>
+    <div class="tables" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr));">
+      <a class="tcard util" style="text-decoration:none;" href="recommendation_system_erd_fixed.html">
+        <div class="head"><span class="ico">🗺️</span> 도메인별 ERD 뷰어</div>
+        <div class="body"><p class="role">9개 도메인 탭으로 보는 관계도 (mermaid)</p></div>
+      </a>
+      <a class="tcard util" style="text-decoration:none;" href="recommendation_system_schema_.html">
+        <div class="head"><span class="ico">🧱</span> 스키마 카드 뷰어</div>
+        <div class="body"><p class="role">78개 테이블 컬럼·enum 카드</p></div>
+      </a>
+      <a class="tcard score" style="text-decoration:none;" href="SCHEMA_V3.md">
+        <div class="head"><span class="ico">📖</span> SCHEMA_V3 데이터 사전</div>
+        <div class="body"><p class="role">도메인별 표 + legacy 매핑</p></div>
+      </a>
+    </div>
+    <div class="callout" style="margin-top:1.6rem;">
+      🖥️ <b>관리자 콘솔</b> — 실행 중인 앱에서 <code>/admin</code> 으로 9개 도메인 운영 현황(대시보드·테이블 조회)을 확인할 수 있어요.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    이직 추천 서비스 · ERD 설명 가이드 · 2026-06-13<br/>
+    상세 문서: <code>docs/03-database/</code> (schema.sql · ERD.md · ERD_mermaid.md · DATA_DICTIONARY.md · SCHEMA_V3.md · migrations 001~016)
+  </div>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad:true,
+    theme:'base',
+    themeVariables:{
+      primaryColor:'#eef2ff', primaryBorderColor:'#4f46e5', primaryTextColor:'#0f172a',
+      lineColor:'#94a3b8', fontFamily:'-apple-system,Pretendard,sans-serif'
+    },
+    er:{ useMaxWidth:true }
+  });
+</script>
+</body>
+</html>

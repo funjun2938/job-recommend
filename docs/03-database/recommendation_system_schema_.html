@@ -1,0 +1,4217 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>추천 시스템 DB 스키마</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #f7f6f3;
+        --surface: #ffffff;
+        --border: rgba(0, 0, 0, 0.08);
+        --border-strong: rgba(0, 0, 0, 0.14);
+        --text-primary: #1a1a1a;
+        --text-secondary: #5c5c5c;
+        --text-tertiary: #999;
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #141414;
+          --surface: #1e1e1e;
+          --border: rgba(255, 255, 255, 0.08);
+          --border-strong: rgba(255, 255, 255, 0.15);
+          --text-primary: #f0f0f0;
+          --text-secondary: #a0a0a0;
+          --text-tertiary: #606060;
+        }
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text-primary);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+        min-height: 100vh;
+      }
+
+      /* ── HEADER ── */
+      .header {
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 20px 28px 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .header-top {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .header-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+      }
+      .header-sub {
+        font-size: 12px;
+        color: var(--text-tertiary);
+      }
+
+      /* ── TABS ── */
+      .tab-list {
+        display: flex;
+        gap: 2px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding-bottom: 1px;
+      }
+      .tab-list::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tab {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+        border: 1px solid transparent;
+        border-bottom: none;
+        background: transparent;
+        color: var(--text-tertiary);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          color 0.15s,
+          background 0.15s;
+        position: relative;
+        bottom: -1px;
+      }
+      .tab:hover:not(.on) {
+        color: var(--text-secondary);
+        background: var(--border);
+      }
+      .tab.on {
+        background: var(--surface);
+        border-color: var(--border);
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+      .tab-icon {
+        font-size: 14px;
+        line-height: 1;
+      }
+      .tab-name {
+        font-size: 12px;
+      }
+      .tab-count {
+        font-size: 10px;
+        font-weight: 500;
+        padding: 1px 5px;
+        border-radius: 99px;
+        background: var(--border);
+        color: var(--text-tertiary);
+        line-height: 1.6;
+      }
+      .tab.on .tab-count {
+        background: #ede9fe;
+        color: #5b21b6;
+      }
+      @media (prefers-color-scheme: dark) {
+        .tab.on .tab-count {
+          background: #2e1f5e;
+          color: #a78bfa;
+        }
+      }
+      .tab-new {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 99px;
+        background: #7c3aed;
+        color: #fff;
+        line-height: 1.6;
+        letter-spacing: 0.04em;
+      }
+
+      /* domain group colors for active tab underline accent */
+      .tab[data-group="user"].on {
+        box-shadow: inset 0 2px 0 #8b5cf6;
+      }
+      .tab[data-group="job"].on {
+        box-shadow: inset 0 2px 0 #0ea5e9;
+      }
+      .tab[data-group="rec"].on {
+        box-shadow: inset 0 2px 0 #3b82f6;
+      }
+      .tab[data-group="admin"].on {
+        box-shadow: inset 0 2px 0 #f59e0b;
+      }
+      .tab[data-group="billing"].on {
+        box-shadow: inset 0 2px 0 #22c55e;
+      }
+      .tab[data-group="sec"].on {
+        box-shadow: inset 0 2px 0 #ec4899;
+      }
+      .tab[data-group="intel"].on {
+        box-shadow: inset 0 2px 0 #6366f1;
+      }
+      .tab[data-group="social"].on {
+        box-shadow: inset 0 2px 0 #a78bfa;
+      }
+      .tab[data-group="notify"].on {
+        box-shadow: inset 0 2px 0 #8b5cf6;
+      }
+
+      /* ── MAIN ── */
+      .main {
+        padding: 24px 28px 40px;
+      }
+
+      /* section label */
+      .section-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        margin: 20px 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .section-label::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+      .section-label:first-child {
+        margin-top: 0;
+      }
+
+      /* count chip */
+      .count-chips {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 3px 10px;
+        border-radius: 99px;
+        border: 1px solid var(--border-strong);
+        color: var(--text-secondary);
+      }
+      .chip.exist {
+        background: var(--surface);
+      }
+      .chip.added {
+        background: #ede9fe;
+        color: #5b21b6;
+        border-color: #c4b5fd;
+      }
+      .chip.total {
+        background: #1e1b4b;
+        color: #e0e7ff;
+        border-color: transparent;
+      }
+      @media (prefers-color-scheme: dark) {
+        .chip.added {
+          background: #2e1f5e;
+          color: #c4b5fd;
+        }
+        .chip.total {
+          background: #ede9fe;
+          color: #1e1b4b;
+        }
+      }
+      .chip-sep {
+        color: var(--text-tertiary);
+        font-size: 13px;
+      }
+
+      /* insight box */
+      .insight {
+        padding: 10px 14px;
+        border-radius: var(--radius-md);
+        border-left: 3px solid #7c3aed;
+        background: #faf5ff;
+        font-size: 11.5px;
+        color: #4c1d95;
+        line-height: 1.7;
+        margin-bottom: 16px;
+      }
+      @media (prefers-color-scheme: dark) {
+        .insight {
+          background: #1f1535;
+          color: #c4b5fd;
+          border-color: #7c3aed;
+        }
+      }
+
+      /* ── GRID ── */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 12px;
+        align-items: start;
+      }
+
+      /* ── TABLE CARD ── */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        transition: box-shadow 0.15s;
+      }
+      .card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+      }
+      .card.is-new {
+        border-color: #c4b5fd;
+      }
+      @media (prefers-color-scheme: dark) {
+        .card:hover {
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+        .card.is-new {
+          border-color: #4c1d95;
+        }
+      }
+
+      .card-head {
+        padding: 9px 12px 8px;
+        font-size: 11.5px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        letter-spacing: -0.01em;
+      }
+      .new-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #7c3aed;
+        flex-shrink: 0;
+      }
+
+      /* head color themes */
+      .h-purple {
+        background: #f5f3ff;
+        color: #3730a3;
+      }
+      .h-blue {
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+      .h-teal {
+        background: #f0fdf4;
+        color: #065f46;
+      }
+      .h-amber {
+        background: #fffbeb;
+        color: #92400e;
+      }
+      .h-coral {
+        background: #fff7ed;
+        color: #9a3412;
+      }
+      .h-pink {
+        background: #fdf2f8;
+        color: #831843;
+      }
+      .h-green {
+        background: #f0fdf4;
+        color: #14532d;
+      }
+      .h-gray {
+        background: #f9fafb;
+        color: #374151;
+      }
+      .h-indigo {
+        background: #eef2ff;
+        color: #312e81;
+      }
+      .h-violet {
+        background: #f5f3ff;
+        color: #4c1d95;
+      }
+      @media (prefers-color-scheme: dark) {
+        .h-purple {
+          background: #1e1b4b;
+          color: #a5b4fc;
+        }
+        .h-blue {
+          background: #0c1a3a;
+          color: #93c5fd;
+        }
+        .h-teal {
+          background: #052e16;
+          color: #6ee7b7;
+        }
+        .h-amber {
+          background: #2d1b00;
+          color: #fcd34d;
+        }
+        .h-coral {
+          background: #2c0a00;
+          color: #fdba74;
+        }
+        .h-pink {
+          background: #2d0a1e;
+          color: #f9a8d4;
+        }
+        .h-green {
+          background: #052e16;
+          color: #86efac;
+        }
+        .h-gray {
+          background: #1f2937;
+          color: #d1d5db;
+        }
+        .h-indigo {
+          background: #1e1b4b;
+          color: #a5b4fc;
+        }
+        .h-violet {
+          background: #2e1065;
+          color: #c4b5fd;
+        }
+      }
+
+      /* card rows */
+      .card-body {
+        font-size: 11px;
+      }
+      .crow {
+        display: flex;
+        flex-direction: column;
+        padding: 5px 12px;
+        border-bottom: 1px solid var(--border);
+        gap: 3px;
+      }
+      .crow:last-child {
+        border-bottom: none;
+      }
+      .crow-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+      }
+      .col {
+        flex: 1;
+        color: var(--text-primary);
+        font-size: 11px;
+      }
+      .badges {
+        display: flex;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+      .badge {
+        font-size: 10px;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      .pk {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .fk {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      @media (prefers-color-scheme: dark) {
+        .pk {
+          background: #3d2000;
+          color: #fcd34d;
+        }
+        .fk {
+          background: #0c1a3a;
+          color: #93c5fd;
+        }
+      }
+      .evs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+      }
+      .ev {
+        font-size: 10px;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: var(--bg);
+        color: var(--text-tertiary);
+        border: 1px solid var(--border);
+        white-space: nowrap;
+      }
+
+      /* ── RELATIONS ── */
+      .rel-box {
+        margin-top: 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 12px 14px;
+      }
+      .rel-title {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        margin-bottom: 10px;
+      }
+      .rel-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .rel-item {
+        font-size: 11px;
+        padding: 3px 9px;
+        border-radius: 99px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+      }
+      .rel-item em {
+        font-style: normal;
+        color: #7c3aed;
+        font-weight: 600;
+      }
+      .rel-item.is-new {
+        border-color: #c4b5fd;
+      }
+      .rel-item.is-new em {
+        color: #7c3aed;
+      }
+      @media (prefers-color-scheme: dark) {
+        .rel-item.is-new {
+          border-color: #4c1d95;
+        }
+      }
+
+      /* ── DOMAIN VISIBILITY ── */
+      .domain {
+        display: none;
+      }
+      .domain.on {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="header-top">
+        <span class="header-title">추천 시스템 DB 스키마</span>
+        <span class="header-sub">9개 도메인 · 총 78개 테이블</span>
+      </div>
+      <div class="tab-list" id="tab-list">
+        <button class="tab on" data-group="user" onclick="show('user', this)">
+          <span class="tab-icon">👤</span
+          ><span class="tab-name">사용자 프로필</span
+          ><span class="tab-count">15개</span>
+        </button>
+        <button class="tab" data-group="job" onclick="show('job', this)">
+          <span class="tab-icon">📋</span><span class="tab-name">채용 공고</span
+          ><span class="tab-count">7개</span>
+        </button>
+        <button class="tab" data-group="rec" onclick="show('rec', this)">
+          <span class="tab-icon">🤖</span
+          ><span class="tab-name">추천 시스템</span
+          ><span class="tab-count">9개</span>
+        </button>
+        <button class="tab" data-group="admin" onclick="show('admin', this)">
+          <span class="tab-icon">🏢</span
+          ><span class="tab-name">관리자/기업</span
+          ><span class="tab-count">7개</span>
+        </button>
+        <button
+          class="tab"
+          data-group="billing"
+          onclick="show('billing', this)"
+        >
+          <span class="tab-icon">💳</span><span class="tab-name">결제/정산</span
+          ><span class="tab-count">12개</span>
+        </button>
+        <button class="tab" data-group="sec" onclick="show('sec', this)">
+          <span class="tab-icon">🔒</span
+          ><span class="tab-name">보안/개인정보</span
+          ><span class="tab-count">8개</span>
+        </button>
+        <button class="tab" data-group="intel" onclick="show('intel', this)">
+          <span class="tab-icon">🧠</span
+          ><span class="tab-name">커리어 인텔리전스</span
+          ><span class="tab-count">6개</span>
+        </button>
+        <button class="tab" data-group="social" onclick="show('social', this)">
+          <span class="tab-icon">🤝</span
+          ><span class="tab-name">소셜/네트워크</span
+          ><span class="tab-count">7개</span>
+        </button>
+        <button class="tab" data-group="notify" onclick="show('notify', this)">
+          <span class="tab-icon">🔔</span
+          ><span class="tab-name">알림/개인화</span
+          ><span class="tab-count">6개</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- ==============================
+     사용자 프로필 (15개)
+     ============================== -->
+      <div class="domain on" id="d-user">
+        <div class="grid">
+          <div class="card">
+            <div class="card-head h-purple">사용자 프로필</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">거주지 / 희망 근무지</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">총 경력 연차 / 최종 학력</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">전공 / 보유 자격증</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">현재 연봉 / 희망 연봉</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이직 희망 시점</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이직 의향 상태</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">active</span><span class="ev">passive</span
+                  ><span class="ev">inactive</span
+                  ><span class="ev">hidden</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공개 여부 / 프로필 완성도</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head h-purple">명함 이력</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">명함_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">회사명 / 부서명</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">직군 / 직책 / 직무</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">근무 시작일 / 종료일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">상태</span></div>
+                <div class="evs">
+                  <span class="ev">재직</span><span class="ev">이직</span
+                  ><span class="ev">종료</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head h-purple">사용자 선호조건</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">preference_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">희망 직군 / 직무 / 산업군</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">희망 회사 규모</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">희망 연봉 최소/최대</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">희망 근무 형태</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">onsite</span><span class="ev">remote</span
+                  ><span class="ev">hybrid</span
+                  ><span class="ev">flexible</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">희망 근무지 / 선호 복지</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">제외 회사 / 산업군 / 직무</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">야근 허용 / 해외근무 가능</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head h-blue">스킬</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">skill_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">skill_name</span></div>
+                <div class="evs">
+                  <span class="ev">Python</span><span class="ev">SQL</span
+                  ><span class="ev">React.js</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">skill_category</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">parent_skill_id</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">표준화명 / 동의어</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head h-blue">사용자 스킬</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_skill_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">skill_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">숙련도</span></div>
+                <div class="evs">
+                  <span class="ev">1-기초</span
+                  ><span class="ev">2-실무가능</span
+                  ><span class="ev">3-능숙</span><span class="ev">4-리딩</span
+                  ><span class="ev">5-전문가</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">사용 연차 / 최근 사용일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">증빙 출처 / 대표 스킬 여부</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head h-purple">사용자 경력 상세</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">career_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">회사명 / 부서명 / 직책 / 직무</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">담당 업무 / 주요 성과</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">사용 기술</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">근무 시작일 / 종료일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">재직 여부</span></div>
+                <div class="evs">
+                  <span class="ev">yes</span><span class="ev">no</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">공개 여부</span></div>
+                <div class="evs">
+                  <span class="ev">public</span><span class="ev">private</span
+                  ><span class="ev">hidden</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head h-purple">사용자 학력 이력</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">education_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">학교명 / 전공</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">학위</span></div>
+                <div class="evs">
+                  <span class="ev">high_school</span
+                  ><span class="ev">bachelor</span><span class="ev">master</span
+                  ><span class="ev">doctor</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">입학일 / 졸업일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">졸업 상태</span></div>
+                <div class="evs">
+                  <span class="ev">enrolled</span
+                  ><span class="ev">graduated</span><span class="ev">leave</span
+                  ><span class="ev">dropped</span
+                  ><span class="ev">expected</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head h-purple">사용자 이력서</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">resume_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이력서명 / 파일 ID</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">파싱 상태</span></div>
+                <div class="evs">
+                  <span class="ev">uploaded</span><span class="ev">parsing</span
+                  ><span class="ev">parsed</span><span class="ev">failed</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">대표 이력서 여부</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">yes</span><span class="ev">no</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">공개 여부</span></div>
+                <div class="evs">
+                  <span class="ev">public</span><span class="ev">private</span
+                  ><span class="ev">hidden</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">생성일 / 수정일</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /grid -->
+
+        <div class="grid">
+          <div class="card is-new">
+            <div class="card-head h-indigo">
+              <span class="new-dot"></span>사용자 자격증 이력
+            </div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_certificate_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">자격증명 / 발급기관</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">취득일 / 만료일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">증빙 파일 ID</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">인증 상태</span></div>
+                <div class="evs">
+                  <span class="ev">pending</span><span class="ev">verified</span
+                  ><span class="ev">rejected</span
+                  ><span class="ev">expired</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card is-new">
+            <div class="card-head h-indigo">
+              <span class="new-dot"></span>사용자 언어 능력
+            </div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_language_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">언어</span></div>
+                <div class="evs">
+                  <span class="ev">Korean</span><span class="ev">English</span
+                  ><span class="ev">Japanese</span
+                  ><span class="ev">Chinese</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">수준</span></div>
+                <div class="evs">
+                  <span class="ev">beginner</span
+                  ><span class="ev">intermediate</span
+                  ><span class="ev">advanced</span
+                  ><span class="ev">native</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">시험명</span></div>
+                <div class="evs">
+                  <span class="ev">TOEIC</span><span class="ev">TOEFL</span
+                  ><span class="ev">OPIc</span><span class="ev">JLPT</span
+                  ><span class="ev">HSK</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">점수 / 취득일 / 만료일</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card is-new">
+            <div class="card-head h-indigo">
+              <span class="new-dot"></span>사용자 프로젝트
+            </div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">project_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">프로젝트명 / 설명</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">역할 / 사용 기술</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">성과 지표</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">시작일 / 종료일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">공개 여부</span></div>
+                <div class="evs">
+                  <span class="ev">public</span><span class="ev">private</span
+                  ><span class="ev">hidden</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card is-new">
+            <div class="card-head h-indigo">
+              <span class="new-dot"></span>사용자 포트폴리오
+            </div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">portfolio_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">포트폴리오 유형</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">github</span><span class="ev">blog</span
+                  ><span class="ev">notion</span><span class="ev">website</span
+                  ><span class="ev">pdf</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">제목 / URL / 파일 ID</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">대표 여부</span></div>
+                <div class="evs">
+                  <span class="ev">yes</span><span class="ev">no</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">공개 여부</span></div>
+                <div class="evs">
+                  <span class="ev">public</span><span class="ev">private</span
+                  ><span class="ev">hidden</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">생성일</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /grid -->
+
+        <div class="grid">
+          <div class="card is-new">
+            <div class="card-head h-violet">
+              <span class="new-dot"></span>커리어 목표
+            </div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">goal_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">이직 이유</span></div>
+                <div class="evs">
+                  <span class="ev">salary_up</span><span class="ev">growth</span
+                  ><span class="ev">wlb</span><span class="ev">culture</span
+                  ><span class="ev">stability</span
+                  ><span class="ev">challenge</span
+                  ><span class="ev">location</span
+                  ><span class="ev">layoff</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이직 이유 우선순위 (JSON)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">목표 직군 / 목표 직책</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">목표 회사 유형</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">startup</span><span class="ev">mid_size</span
+                  ><span class="ev">enterprise</span
+                  ><span class="ev">foreign</span><span class="ev">public</span
+                  ><span class="ev">any</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">목표 연봉 최소 / 이상적</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">3년 후 커리어 목표 (자유 입력)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">중요 복지 우선순위 (JSON)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">절대 기피 조건 (JSON)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">생성일 / 수정일</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card is-new">
+            <div class="card-head h-teal">
+              <span class="new-dot"></span>이직 준비 상태
+            </div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">readiness_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">면접 가능 시기</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">immediately</span
+                  ><span class="ev">within_2w</span
+                  ><span class="ev">within_1m</span
+                  ><span class="ev">within_3m</span
+                  ><span class="ev">undecided</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">선호 면접 방식</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">video</span><span class="ev">in_person</span
+                  ><span class="ev">phone</span><span class="ev">any</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">면접 가능 시간대 (JSON)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">현재 진행 중인 전형 수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">입사 가능일</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이직 준비 단계</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">thinking</span
+                  ><span class="ev">resume_ready</span
+                  ><span class="ev">applying</span
+                  ><span class="ev">interviewing</span
+                  ><span class="ev">offer_stage</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이직 준비도 점수 (0-100)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">현재 직장 공개 가능 여부</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">yes</span><span class="ev">no</span
+                  ><span class="ev">after_offer</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">마지막 업데이트</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card is-new">
+            <div class="card-head h-amber">
+              <span class="new-dot"></span>사용자 활동/포인트
+            </div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">activity_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">활동 유형</span></div>
+                <div class="evs">
+                  <span class="ev">profile_complete</span
+                  ><span class="ev">resume_upload</span
+                  ><span class="ev">skill_add</span
+                  ><span class="ev">career_add</span
+                  ><span class="ev">portfolio_add</span
+                  ><span class="ev">cert_add</span
+                  ><span class="ev">login_streak</span
+                  ><span class="ev">feedback_given</span
+                  ><span class="ev">referral</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">획득 포인트 / 누적 포인트</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">활동 일시</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">프로필 완성도 기여 항목</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">basic_info</span
+                  ><span class="ev">career</span><span class="ev">skill</span
+                  ><span class="ev">education</span><span class="ev">cert</span
+                  ><span class="ev">language</span
+                  ><span class="ev">portfolio</span
+                  ><span class="ev">preference</span
+                  ><span class="ev">goal</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">완성도 반영 점수 (+N%)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /grid -->
+
+        <div class="rel-box">
+          <div class="rel-title">전체 관계</div>
+          <div class="rel-list">
+            <div class="rel-item">사용자 프로필 <em>1:N</em> 명함 이력</div>
+            <div class="rel-item">
+              사용자 프로필 <em>1:1</em> 사용자 선호조건
+            </div>
+            <div class="rel-item">사용자 프로필 <em>1:N</em> 사용자 스킬</div>
+            <div class="rel-item">사용자 스킬 <em>N:1</em> 스킬</div>
+            <div class="rel-item">
+              사용자 프로필 <em>1:N</em> 사용자 경력 상세
+            </div>
+            <div class="rel-item">
+              사용자 프로필 <em>1:N</em> 사용자 학력 이력
+            </div>
+            <div class="rel-item">사용자 프로필 <em>1:N</em> 사용자 이력서</div>
+            <div class="rel-item is-new">
+              사용자 프로필 <em>1:N</em> 사용자 자격증 이력
+            </div>
+            <div class="rel-item is-new">
+              사용자 프로필 <em>1:N</em> 사용자 언어 능력
+            </div>
+            <div class="rel-item is-new">
+              사용자 프로필 <em>1:N</em> 사용자 프로젝트
+            </div>
+            <div class="rel-item is-new">
+              사용자 프로필 <em>1:N</em> 사용자 포트폴리오
+            </div>
+            <div class="rel-item is-new">
+              사용자 프로필 <em>1:1</em> 커리어 목표
+            </div>
+            <div class="rel-item is-new">
+              사용자 프로필 <em>1:1</em> 이직 준비 상태
+            </div>
+            <div class="rel-item is-new">
+              사용자 프로필 <em>1:N</em> 사용자 활동/포인트
+            </div>
+            <div class="rel-item is-new">
+              커리어 목표 <em>→</em> 추천 점수 (preference 가중치)
+            </div>
+            <div class="rel-item is-new">
+              이직 준비 상태 <em>→</em> 알림/개인화 (발송 빈도 조정)
+            </div>
+            <div class="rel-item is-new">
+              사용자 활동/포인트 <em>→</em> 프로필 완성도 갱신
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /d-user -->
+
+      <!-- ==============================
+     채용 공고 (7개)
+     ============================== -->
+      <div class="domain" id="d-job">
+        <div class="grid">
+          <div class="card">
+            <div class="card-head h-teal">회사</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">회사명 / 대표명 / 사업자번호</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">산업군 / 회사 규모 / 설립연도</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">직원 수 / 위치 / 홈페이지</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">상장 여부 / 회사 상태</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-teal">직무 마스터</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">job_role_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">직군 / 직무 / 표준 직무명</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">상위 직무 / 설명</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-teal">직무명 매핑</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">mapping_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">job_role_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">원본 직무명 / 신뢰도</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-teal">채용공고</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">job_posting_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id / job_role_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공고 제목 / 직군 / 직무</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">고용 형태 / 경력 요건 최소/최대</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">학력 요건 / 근무지</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">근무 형태</span></div>
+                <div class="evs">
+                  <span class="ev">onsite</span><span class="ev">remote</span
+                  ><span class="ev">hybrid</span
+                  ><span class="ev">flexible</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">연봉 최소/최대</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">주요 업무 / 자격 요건 / 우대</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공고 시작일 / 종료일 / 상태</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-teal">공고 요구 스킬</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">posting_skill_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">job_posting_id / skill_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">필수 여부 / 중요도 / 요구 연차</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-teal">지원 이력</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">application_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / job_posting_id / company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">지원일 / 지원 경로</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">전형 상태</span></div>
+                <div class="evs">
+                  <span class="ev">applied</span
+                  ><span class="ev">document_passed</span
+                  ><span class="ev">interview_1</span
+                  ><span class="ev">interview_2</span
+                  ><span class="ev">offer</span><span class="ev">accepted</span
+                  ><span class="ev">rejected</span
+                  ><span class="ev">withdrawn</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">서류 / 면접 / 최종 결과</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">입사 여부 / 입사 예정일</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-teal">채용공고 조회 이력</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">job_view_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / job_posting_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">조회일시 / 체류 시간</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">유입 경로</span></div>
+                <div class="evs">
+                  <span class="ev">recommendation</span
+                  ><span class="ev">search</span
+                  ><span class="ev">company_page</span
+                  ><span class="ev">external</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rel-box">
+          <div class="rel-title">주요 관계</div>
+          <div class="rel-list">
+            <div class="rel-item">회사 <em>1:N</em> 채용공고</div>
+            <div class="rel-item">직무 마스터 <em>1:N</em> 채용공고</div>
+            <div class="rel-item">직무 마스터 <em>1:N</em> 직무명 매핑</div>
+            <div class="rel-item">채용공고 <em>1:N</em> 공고 요구 스킬</div>
+            <div class="rel-item">채용공고 <em>1:N</em> 지원 이력</div>
+            <div class="rel-item">채용공고 <em>1:N</em> 조회 이력</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================
+     추천 시스템 (9개)
+     ============================== -->
+      <div class="domain" id="d-rec">
+        <div class="grid">
+          <div class="card">
+            <div class="card-head h-blue">추천 결과</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">recommendation_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / job_posting_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">추천 점수</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">스킬 / 경력 / 연봉 매칭 점수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">지역 / 산업군 매칭 점수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">추천 사유 / 추천 모델 버전</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">추천일 / 노출 여부 / 추천 상태</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-blue">추천 모델</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">model_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">model_name / model_version</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">버전 예시</span></div>
+                <div class="evs">
+                  <span class="ev">v1.0-Rule-based</span
+                  ><span class="ev">v1.1-Weighted</span
+                  ><span class="ev">v2.0-ML ranking</span
+                  ><span class="ev">v3.0-Hybrid</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">알고리즘 유형 / 사용 피처</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">배포일 / 상태 / 설명</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-blue">추천 점수 상세</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">score_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">recommendation_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">점수 항목</span></div>
+                <div class="evs">
+                  <span class="ev">skill</span><span class="ev">career</span
+                  ><span class="ev">salary</span><span class="ev">location</span
+                  ><span class="ev">industry</span
+                  ><span class="ev">preference</span
+                  ><span class="ev">behavior</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">원점수 / 가중치 / 최종 점수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">설명</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-blue">추천 피드백</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">feedback_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / recommendation_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">feedback_type</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">like</span><span class="ev">dislike</span
+                  ><span class="ev">not_relevant</span
+                  ><span class="ev">salary_low</span
+                  ><span class="ev">location_bad</span
+                  ><span class="ev">company_not_preferred</span
+                  ><span class="ev">already_seen</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">feedback_reason / created_at</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-blue">추천 피처 스냅샷</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">snapshot_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col"
+                    >user_id / job_posting_id / recommendation_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">사용 피처 JSON</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">생성 모델 버전 / 생성일</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-blue">추천 실험</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">experiment_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">실험명 / 실험 목적</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">대상 사용자 비율 / 시작일 / 종료일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">실험 상태</span></div>
+                <div class="evs">
+                  <span class="ev">draft</span><span class="ev">running</span
+                  ><span class="ev">paused</span
+                  ><span class="ev">completed</span
+                  ><span class="ev">stopped</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-blue">추천 실험 그룹</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">group_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">experiment_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">그룹명</span></div>
+                <div class="evs">
+                  <span class="ev">control</span
+                  ><span class="ev">variant_a</span
+                  ><span class="ev">variant_b</span
+                  ><span class="ev">variant_c</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">추천 모델 버전 / 노출 비율</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-blue">추천 품질 지표</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">metric_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">model_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">기준일</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">노출 수 / 클릭 수 / 지원 수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">관심 / 부정 피드백 수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">CTR / 지원 전환율</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-blue">사용자 행동 로그</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">event_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / job_posting_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">event_type / event_time</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">device / session_id / source</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rel-box">
+          <div class="rel-title">주요 관계</div>
+          <div class="rel-list">
+            <div class="rel-item">추천 결과 <em>N:1</em> 추천 모델</div>
+            <div class="rel-item">추천 결과 <em>1:N</em> 추천 점수 상세</div>
+            <div class="rel-item">추천 결과 <em>1:N</em> 추천 피드백</div>
+            <div class="rel-item">추천 결과 <em>1:1</em> 추천 피처 스냅샷</div>
+            <div class="rel-item">추천 실험 <em>1:N</em> 추천 실험 그룹</div>
+            <div class="rel-item">추천 모델 <em>1:N</em> 추천 품질 지표</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================
+     관리자/기업 (7개)
+     ============================== -->
+      <div class="domain" id="d-admin">
+        <div class="grid">
+          <div class="card">
+            <div class="card-head h-amber">관리자 계정</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">admin_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">role_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이름 / 이메일 / 휴대폰</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">소속 부서 / 직책</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">계정 상태</span></div>
+                <div class="evs">
+                  <span class="ev">active</span><span class="ev">inactive</span
+                  ><span class="ev">suspended</span
+                  ><span class="ev">deleted</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">2FA 여부</span></div>
+                <div class="evs">
+                  <span class="ev">yes</span><span class="ev">no</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-amber">관리자 권한 그룹</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">role_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">권한명</span></div>
+                <div class="evs">
+                  <span class="ev">super_admin</span
+                  ><span class="ev">operation_admin</span
+                  ><span class="ev">finance_admin</span
+                  ><span class="ev">sales_admin</span
+                  ><span class="ev">cs_admin</span
+                  ><span class="ev">data_admin</span
+                  ><span class="ev">viewer</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">설명 / 권한 상태</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-amber">관리자 권한 메뉴</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">permission_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">role_id / menu_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">조회 / 생성 / 수정 / 삭제 권한</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">승인 / 다운로드 권한</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-amber">관리자 메뉴</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">menu_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">상위 메뉴 ID / 메뉴명 / URL</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">메뉴 코드</span></div>
+                <div class="evs">
+                  <span class="ev">dashboard</span><span class="ev">user</span
+                  ><span class="ev">company</span><span class="ev">job</span
+                  ><span class="ev">billing</span
+                  ><span class="ev">settlement</span
+                  ><span class="ev">admin</span
+                  ><span class="ev">statistics</span><span class="ev">cs</span
+                  ><span class="ev">settings</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">정렬 순서 / 노출 여부</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-coral">기업 담당자</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">manager_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이름 / 이메일 / 휴대폰</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">부서명 / 직책</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">담당 업무</span></div>
+                <div class="evs">
+                  <span class="ev">recruiter</span
+                  ><span class="ev">billing</span
+                  ><span class="ev">contract</span><span class="ev">owner</span
+                  ><span class="ev">viewer</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">계정 상태</span></div>
+                <div class="evs">
+                  <span class="ev">invited</span><span class="ev">active</span
+                  ><span class="ev">inactive</span
+                  ><span class="ev">suspended</span
+                  ><span class="ev">deleted</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-coral">기업 담당자 권한</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">perm_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">manager_id / company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공고 등록 / 지원자 조회 권한</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">제안 발송 / 결제 조회 권한</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">계약 조회 / 관리자 권한 부여</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-coral">기업 제안</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">offer_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id / user_id / job_posting_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">제안 제목 / 내용</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">제안 연봉 최소/최대 / 발송일 / 만료일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">제안 상태</span></div>
+                <div class="evs">
+                  <span class="ev">draft</span><span class="ev">sent</span
+                  ><span class="ev">opened</span><span class="ev">accepted</span
+                  ><span class="ev">rejected</span
+                  ><span class="ev">expired</span
+                  ><span class="ev">withdrawn</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rel-box">
+          <div class="rel-title">주요 관계</div>
+          <div class="rel-list">
+            <div class="rel-item">관리자 계정 <em>N:1</em> 권한 그룹</div>
+            <div class="rel-item">권한 그룹 <em>1:N</em> 권한 메뉴</div>
+            <div class="rel-item">권한 메뉴 <em>N:1</em> 관리자 메뉴</div>
+            <div class="rel-item">
+              기업 담당자 <em>1:1</em> 기업 담당자 권한
+            </div>
+            <div class="rel-item">기업 담당자 <em>1:N</em> 기업 제안</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================
+     결제/정산 (12개)
+     ============================== -->
+      <div class="domain" id="d-billing">
+        <div class="grid">
+          <div class="card">
+            <div class="card-head h-green">요금제</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">plan_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">요금제명</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">요금제 코드</span></div>
+                <div class="evs">
+                  <span class="ev">free</span><span class="ev">basic</span
+                  ><span class="ev">standard</span
+                  ><span class="ev">premium</span
+                  ><span class="ev">enterprise</span
+                  ><span class="ev">custom</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">월 / 연 이용료</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공고등록 / 제안발송 / 후보열람 수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">성공 수수료율</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">기업 계약</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">contract_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">계약 유형</span></div>
+                <div class="evs">
+                  <span class="ev">subscription</span
+                  ><span class="ev">success_fee</span
+                  ><span class="ev">prepaid</span
+                  ><span class="ev">postpaid</span
+                  ><span class="ev">custom</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">계약 금액 / 과금 방식</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">계약 상태</span></div>
+                <div class="evs">
+                  <span class="ev">draft</span><span class="ev">pending</span
+                  ><span class="ev">active</span><span class="ev">expired</span
+                  ><span class="ev">terminated</span
+                  ><span class="ev">cancelled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">기업 구독</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">subscription_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id / plan_id / contract_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">구독 시작일 / 종료일 / 다음 결제일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">자동 갱신</span></div>
+                <div class="evs">
+                  <span class="ev">yes</span><span class="ev">no</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">구독 상태</span></div>
+                <div class="evs">
+                  <span class="ev">trial</span><span class="ev">active</span
+                  ><span class="ev">past_due</span><span class="ev">paused</span
+                  ><span class="ev">cancelled</span
+                  ><span class="ev">expired</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">결제수단</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">payment_method_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">결제수단 유형</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">card</span
+                  ><span class="ev">bank_transfer</span
+                  ><span class="ev">virtual_account</span
+                  ><span class="ev">tax_invoice</span
+                  ><span class="ev">manual</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">카드사 / 마지막 4자리</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">결제수단 상태</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">active</span><span class="ev">inactive</span
+                  ><span class="ev">expired</span><span class="ev">failed</span
+                  ><span class="ev">deleted</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">청구서</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">invoice_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id / subscription_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">청구 기간 시작일 / 종료일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공급가액 / 부가세 / 총 청구</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">납부 기한 / 발행일 / 결제일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">청구 상태</span></div>
+                <div class="evs">
+                  <span class="ev">draft</span><span class="ev">issued</span
+                  ><span class="ev">paid</span><span class="ev">overdue</span
+                  ><span class="ev">cancelled</span
+                  ><span class="ev">refunded</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">청구서 상세</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">invoice_item_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">invoice_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">항목명</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">과금 유형</span></div>
+                <div class="evs">
+                  <span class="ev">subscription_fee</span
+                  ><span class="ev">job_posting_fee</span
+                  ><span class="ev">offer_fee</span
+                  ><span class="ev">success_fee</span
+                  ><span class="ev">extra_usage_fee</span
+                  ><span class="ev">discount</span
+                  ><span class="ev">adjustment</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">수량 / 단가 / 공급가액 / 합계</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">결제</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">payment_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">invoice_id / payment_method_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">결제 금액 / 부가세 / 총액</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">결제일 / PG사 / PG 거래 ID</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">결제 상태</span></div>
+                <div class="evs">
+                  <span class="ev">ready</span><span class="ev">pending</span
+                  ><span class="ev">paid</span><span class="ev">failed</span
+                  ><span class="ev">cancelled</span
+                  ><span class="ev">refunded</span
+                  ><span class="ev">partial_refunded</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">실패 사유</span></div>
+                <div class="evs">
+                  <span class="ev">insufficient_funds</span
+                  ><span class="ev">card_expired</span
+                  ><span class="ev">limit_exceeded</span
+                  ><span class="ev">invalid_card</span
+                  ><span class="ev">pg_error</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">환불</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">refund_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">payment_id / company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">환불 금액</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">환불 사유</span></div>
+                <div class="evs">
+                  <span class="ev">duplicate_payment</span
+                  ><span class="ev">service_cancelled</span
+                  ><span class="ev">contract_cancelled</span
+                  ><span class="ev">admin_adjustment</span
+                  ><span class="ev">customer_request</span
+                  ><span class="ev">error</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">환불 상태</span></div>
+                <div class="evs">
+                  <span class="ev">requested</span
+                  ><span class="ev">reviewing</span
+                  ><span class="ev">approved</span
+                  ><span class="ev">rejected</span
+                  ><span class="ev">processing</span
+                  ><span class="ev">completed</span
+                  ><span class="ev">failed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">세금계산서</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">tax_invoice_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">payment_id / invoice_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공급가액 / 부가세 / 합계</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">발행 이메일 / 사업자번호 / 발행일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">발행 상태</span></div>
+                <div class="evs">
+                  <span class="ev">pending</span><span class="ev">issued</span
+                  ><span class="ev">failed</span
+                  ><span class="ev">cancelled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">성공보수 관리</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">success_fee_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id / application_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">입사일 / 입사 연봉 / 수수료율</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">성공보수 금액 / 보증 기간 종료일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">상태</span></div>
+                <div class="evs">
+                  <span class="ev">pending</span
+                  ><span class="ev">confirmed</span
+                  ><span class="ev">invoiced</span><span class="ev">paid</span
+                  ><span class="ev">refunded</span
+                  ><span class="ev">cancelled</span
+                  ><span class="ev">disputed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">정산</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">settlement_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">정산 기간 시작일 / 종료일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">총 청구 / 결제 / 환불 / 미수 금액</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">정산 상태</span></div>
+                <div class="evs">
+                  <span class="ev">draft</span><span class="ev">confirmed</span
+                  ><span class="ev">paid</span><span class="ev">overdue</span
+                  ><span class="ev">cancelled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-green">기업 크레딧</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">credit_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">크레딧 유형</span></div>
+                <div class="evs">
+                  <span class="ev">job_posting_credit</span
+                  ><span class="ev">offer_credit</span
+                  ><span class="ev">applicant_view_credit</span
+                  ><span class="ev">discount_credit</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">지급 / 사용 / 잔여 수량</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">지급 사유</span></div>
+                <div class="evs">
+                  <span class="ev">purchase</span
+                  ><span class="ev">promotion</span
+                  ><span class="ev">compensation</span
+                  ><span class="ev">admin_adjustment</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">상태</span></div>
+                <div class="evs">
+                  <span class="ev">active</span><span class="ev">used</span
+                  ><span class="ev">expired</span
+                  ><span class="ev">cancelled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rel-box">
+          <div class="rel-title">주요 관계</div>
+          <div class="rel-list">
+            <div class="rel-item">
+              요금제 <em>→</em> 구독 <em>→</em> 청구서 <em>→</em> 결제
+            </div>
+            <div class="rel-item">결제 <em>1:N</em> 환불</div>
+            <div class="rel-item">청구서 <em>1:N</em> 청구서 상세</div>
+            <div class="rel-item">결제 <em>1:1</em> 세금계산서</div>
+            <div class="rel-item">기업 계약 <em>1:N</em> 구독</div>
+            <div class="rel-item">지원 이력 <em>1:1</em> 성공보수 관리</div>
+            <div class="rel-item">결제수단 <em>1:N</em> 결제</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================
+     보안/개인정보 (8개)
+     ============================== -->
+      <div class="domain" id="d-sec">
+        <div class="grid">
+          <div class="card">
+            <div class="card-head h-pink">개인정보 동의 이력</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">consent_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">동의 항목</span></div>
+                <div class="evs">
+                  <span class="ev">개인정보 수집 이용</span
+                  ><span class="ev">민감정보 처리</span
+                  ><span class="ev">이력 기반 추천</span
+                  ><span class="ev">채용사 제안 수신</span
+                  ><span class="ev">마케팅 수신</span
+                  ><span class="ev">제3자 제공</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">동의 버전 / 동의 여부 / 철회 일시</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">수집 목적 / 보관 기간</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-pink">개인정보 접근 로그</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">log_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">accessor_type</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">admin</span
+                  ><span class="ev">company_manager</span
+                  ><span class="ev">system</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">accessor_id / user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">접근 항목</span></div>
+                <div class="evs">
+                  <span class="ev">profile</span><span class="ev">resume</span
+                  ><span class="ev">contact</span><span class="ev">salary</span
+                  ><span class="ev">consent</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">접근 목적</span></div>
+                <div class="evs">
+                  <span class="ev">recommendation</span
+                  ><span class="ev">recruitment</span><span class="ev">cs</span
+                  ><span class="ev">audit</span><span class="ev">legal</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">접근 결과</span></div>
+                <div class="evs">
+                  <span class="ev">success</span><span class="ev">denied</span
+                  ><span class="ev">masked</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-pink">데이터 삭제 요청</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">request_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">요청 유형</span></div>
+                <div class="evs">
+                  <span class="ev">withdraw</span
+                  ><span class="ev">delete_profile</span
+                  ><span class="ev">delete_resume</span
+                  ><span class="ev">delete_all</span
+                  ><span class="ev">consent_withdrawal</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">처리 상태</span></div>
+                <div class="evs">
+                  <span class="ev">requested</span
+                  ><span class="ev">verifying</span
+                  ><span class="ev">processing</span
+                  ><span class="ev">completed</span
+                  ><span class="ev">rejected</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">요청일 / 완료일 / 처리자</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-pink">데이터 마스킹 정책</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">policy_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">대상 테이블 / 컬럼</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">마스킹 방식</span></div>
+                <div class="evs">
+                  <span class="ev">full</span><span class="ev">partial</span
+                  ><span class="ev">hash</span><span class="ev">tokenized</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">적용 대상</span></div>
+                <div class="evs">
+                  <span class="ev">admin</span
+                  ><span class="ev">company_manager</span
+                  ><span class="ev">viewer</span><span class="ev">system</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-pink">약관 버전</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">terms_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">약관 유형</span></div>
+                <div class="evs">
+                  <span class="ev">service</span><span class="ev">privacy</span
+                  ><span class="ev">marketing</span
+                  ><span class="ev">third_party</span
+                  ><span class="ev">sensitive_info</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">버전 / 제목 / 내용 / 시행일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">상태</span></div>
+                <div class="evs">
+                  <span class="ev">draft</span><span class="ev">active</span
+                  ><span class="ev">expired</span
+                  ><span class="ev">deleted</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-pink">사용자 약관 동의</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">agreement_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / terms_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">동의 여부</span></div>
+                <div class="evs">
+                  <span class="ev">yes</span><span class="ev">no</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">동의 일시 / 철회 일시 / IP</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-gray">시스템 배치 작업</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">batch_job_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">작업명</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">작업 유형</span></div>
+                <div class="evs">
+                  <span class="ev">recommendation</span
+                  ><span class="ev">parsing</span
+                  ><span class="ev">notification</span
+                  ><span class="ev">settlement</span
+                  ><span class="ev">cleanup</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">처리 / 성공 / 실패 건수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">작업 상태</span></div>
+                <div class="evs">
+                  <span class="ev">waiting</span><span class="ev">running</span
+                  ><span class="ev">success</span><span class="ev">failed</span
+                  ><span class="ev">cancelled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-gray">시스템 에러 로그</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">error_log_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">발생 위치</span></div>
+                <div class="evs">
+                  <span class="ev">api</span><span class="ev">batch</span
+                  ><span class="ev">admin</span
+                  ><span class="ev">recommendation</span
+                  ><span class="ev">payment</span
+                  ><span class="ev">external</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">에러 코드 / 메시지 / 발생일시</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">처리 상태</span></div>
+                <div class="evs">
+                  ><span class="ev">investigating</span
+                  ><span class="ev">resolved</span
+                  ><span class="ev">ignored</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rel-box">
+          <div class="rel-title">주요 관계</div>
+          <div class="rel-list">
+            <div class="rel-item">약관 버전 <em>1:N</em> 사용자 약관 동의</div>
+            <div class="rel-item">
+              사용자 프로필 <em>1:N</em> 개인정보 동의 이력
+            </div>
+            <div class="rel-item">
+              사용자 프로필 <em>1:N</em> 데이터 삭제 요청
+            </div>
+            <div class="rel-item">
+              사용자 프로필 <em>1:N</em> 개인정보 접근 로그
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================
+     커리어 인텔리전스 (6개)
+     ============================== -->
+      <div class="domain" id="d-intel">
+        <div class="insight">
+          💡 외부 시장 데이터를 내재화하여 추천 모델의 점수에 "지금 이 스킬의
+          시장가치", "이 직군의 채용 온도"를 반영합니다. 사용자에게는 "당신의
+          현재 연봉은 시장 대비 -12%입니다"처럼 행동을 유발하는 인사이트를
+          제공합니다.
+        </div>
+        <div class="grid">
+          <div class="card">
+            <div class="card-head h-indigo">직무별 연봉 벤치마크</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">benchmark_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">job_role_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">경력 구간</span></div>
+                <div class="evs">
+                  <span class="ev">0-2년</span><span class="ev">3-5년</span
+                  ><span class="ev">6-9년</span><span class="ev">10년+</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">회사 규모</span></div>
+                <div class="evs">
+                  <span class="ev">스타트업</span><span class="ev">중소</span
+                  ><span class="ev">중견</span><span class="ev">대기업</span
+                  ><span class="ev">외국계</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">연봉 하위25% / 중위값 / 상위25%</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">연봉 상위10% / 평균</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">산업군 / 지역 / 샘플 수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">기준 연월</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">데이터 출처</span></div>
+                <div class="evs">
+                  <span class="ev">internal</span><span class="ev">survey</span
+                  ><span class="ev">crawled</span
+                  ><span class="ev">partner</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-indigo">스킬 트렌드</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">trend_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">skill_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">기준 연월</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공고 등장 횟수 / 전월 대비 증감률</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col"
+                    >연봉 프리미엄 (보유 시 평균 연봉 차이)</span
+                  >
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">트렌드 방향</span></div>
+                <div class="evs">
+                  <span class="ev">rising</span><span class="ev">stable</span
+                  ><span class="ev">declining</span
+                  ><span class="ev">emerging</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">산업군 / 직군 필터</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-indigo">산업별 채용 동향</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">hiring_trend_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">산업군 / 기준 연월</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">신규 공고 수 / 전월 대비 증감률</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">평균 공고 유지 기간 / 경쟁률</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">채용 온도</span></div>
+                <div class="evs">
+                  <span class="ev">hot</span><span class="ev">warm</span
+                  ><span class="ev">cool</span><span class="ev">cold</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">주요 채용 직군 Top5 (JSON)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-indigo">스킬 갭 분석</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">gap_analysis_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">target_job_role_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">보유 스킬 매칭률 (%)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">부족 스킬 목록 (JSON)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">우선 습득 스킬 Top3 (JSON)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">예상 준비 기간 (개월)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">분석 기준일 / 모델 버전</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-indigo">회사 평판 지표</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">reputation_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">기준 연월</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">종합 평점 (1-5)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">워라밸 / 성장가능성 / 복지 점수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">경영진 신뢰도 / 동료 만족도</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">평균 재직 기간 (개월)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">데이터 출처</span></div>
+                <div class="evs">
+                  <span class="ev">internal_review</span
+                  ><span class="ev">glassdoor</span
+                  ><span class="ev">jobplanet</span><span class="ev">blind</span
+                  ><span class="ev">survey</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">리뷰 수</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-indigo">커리어 경로 패턴</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">path_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">from_job_role_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">to_job_role_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이동 빈도 / 평균 소요 경력 (년)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">평균 연봉 상승률 (%)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">이동 유형</span></div>
+                <div class="evs">
+                  <span class="ev">promotion</span
+                  ><span class="ev">lateral</span><span class="ev">pivot</span
+                  ><span class="ev">industry_change</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공통 경유 스킬 (JSON)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">기준 연월 / 샘플 수</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rel-box">
+          <div class="rel-title">주요 관계 및 추천 시스템 연결</div>
+          <div class="rel-list">
+            <div class="rel-item">
+              직무 마스터 <em>1:N</em> 직무별 연봉 벤치마크
+            </div>
+            <div class="rel-item">스킬 <em>1:N</em> 스킬 트렌드</div>
+            <div class="rel-item">회사 <em>1:N</em> 회사 평판 지표</div>
+            <div class="rel-item">사용자 프로필 <em>1:N</em> 스킬 갭 분석</div>
+            <div class="rel-item">
+              직무 마스터 <em>N:N</em> 커리어 경로 패턴
+            </div>
+            <div class="rel-item">
+              연봉 벤치마크 <em>→</em> 추천 점수 (salary 항목 보정)
+            </div>
+            <div class="rel-item">
+              스킬 트렌드 <em>→</em> 추천 점수 (skill 가중치 조정)
+            </div>
+            <div class="rel-item">
+              커리어 경로 패턴 <em>→</em> 추천 결과 (다음 스텝 공고 노출)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================
+     소셜/네트워크 (7개)
+     ============================== -->
+      <div class="domain" id="d-social">
+        <div class="insight">
+          💡 LinkedIn·리멤버 연동으로 "내 전 동료가 이직한 회사", "같은 학교
+          선배가 다니는 곳" 신호를 추천에 활용합니다. 네트워크 기반 추천은
+          콜드스타트 문제를 해결하고, 숨겨진 채용(Hidden JD)으로의 연결도
+          가능하게 합니다.
+        </div>
+        <div class="grid">
+          <div class="card">
+            <div class="card-head h-violet">소셜 계정 연동</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">social_account_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">플랫폼</span></div>
+                <div class="evs">
+                  <span class="ev">linkedin</span
+                  ><span class="ev">remember</span><span class="ev">kakao</span
+                  ><span class="ev">naver</span><span class="ev">google</span
+                  ><span class="ev">apple</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">플랫폼 고유 ID / 프로필 URL</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">액세스 토큰 (암호화) / 만료일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">마지막 동기화 일시</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">동기화 항목</span></div>
+                <div class="evs">
+                  <span class="ev">profile</span
+                  ><span class="ev">connections</span
+                  ><span class="ev">experience</span
+                  ><span class="ev">skills</span
+                  ><span class="ev">education</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">연동 상태</span></div>
+                <div class="evs">
+                  <span class="ev">active</span><span class="ev">expired</span
+                  ><span class="ev">revoked</span><span class="ev">error</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-violet">사용자 연결 관계</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">connection_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">from_user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">to_user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">연결 유형</span></div>
+                <div class="evs">
+                  <span class="ev">colleague</span><span class="ev">alumni</span
+                  ><span class="ev">mentor</span><span class="ev">mentee</span
+                  ><span class="ev">follow</span
+                  ><span class="ev">linkedin_import</span
+                  ><span class="ev">remember_import</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">연결 강도</span></div>
+                <div class="evs">
+                  <span class="ev">strong</span><span class="ev">medium</span
+                  ><span class="ev">weak</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공통 회사 / 공통 학교</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">연결 상태</span></div>
+                <div class="evs">
+                  <span class="ev">pending</span><span class="ev">accepted</span
+                  ><span class="ev">blocked</span
+                  ><span class="ev">deleted</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">연결 출처</span></div>
+                <div class="evs">
+                  <span class="ev">linkedin</span
+                  ><span class="ev">remember</span><span class="ev">manual</span
+                  ><span class="ev">suggested</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-violet">명함 교환 이력</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">card_exchange_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">from_user_id / to_user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">교환 방식</span></div>
+                <div class="evs">
+                  <span class="ev">qr_scan</span><span class="ev">nfc</span
+                  ><span class="ev">link_share</span
+                  ><span class="ev">remember_import</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">교환 장소 / 교환 일시</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">메모</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-violet">네트워크 추천 신호</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">network_signal_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / company_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">신호 유형</span></div>
+                <div class="evs">
+                  <span class="ev">ex_colleague_joined</span
+                  ><span class="ev">alumni_works_here</span
+                  ><span class="ev">connection_referred</span
+                  ><span class="ev">mutual_connection_count</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">연결된 유저 수 (익명 집계)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">신호 강도 점수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">추천 가중치 반영</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">yes</span><span class="ev">no</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">생성일 / 만료일</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-violet">LinkedIn 프로필 임포트</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">li_import_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / social_account_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">임포트 항목</span></div>
+                <div class="evs">
+                  <span class="ev">headline</span><span class="ev">summary</span
+                  ><span class="ev">experience</span
+                  ><span class="ev">education</span
+                  ><span class="ev">skills</span
+                  ><span class="ev">certifications</span
+                  ><span class="ev">connections_count</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">원본 데이터 JSON / 파싱 결과 JSON</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">프로필 매핑 상태</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">pending</span><span class="ev">mapped</span
+                  ><span class="ev">conflict</span
+                  ><span class="ev">failed</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">임포트 일시</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-violet">리멤버 명함 임포트</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">rm_import_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / social_account_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">임포트된 명함 수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">연결 생성된 유저 수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">미매핑 명함 수 (비가입자)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">원본 명함 데이터 JSON</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">임포트 상태</span></div>
+                <div class="evs">
+                  <span class="ev">pending</span
+                  ><span class="ev">processing</span
+                  ><span class="ev">completed</span
+                  ><span class="ev">failed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-violet">연결 추천 (PYMK)</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">suggestion_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / suggested_user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">추천 근거</span></div>
+                <div class="evs">
+                  <span class="ev">same_company</span
+                  ><span class="ev">same_school</span
+                  ><span class="ev">mutual_connections</span
+                  ><span class="ev">same_job_role</span
+                  ><span class="ev">linkedin_2nd</span
+                  ><span class="ev">remember_contact</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">공통 연결 수 / 추천 점수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">노출 여부 / 노출일</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">사용자 반응</span></div>
+                <div class="evs">
+                  <span class="ev">accepted</span><span class="ev">ignored</span
+                  ><span class="ev">dismissed</span
+                  ><span class="ev">pending</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rel-box">
+          <div class="rel-title">주요 관계 및 추천 시스템 연결</div>
+          <div class="rel-list">
+            <div class="rel-item">
+              사용자 프로필 <em>1:N</em> 소셜 계정 연동
+            </div>
+            <div class="rel-item">
+              사용자 프로필 <em>N:N</em> 사용자 연결 관계
+            </div>
+            <div class="rel-item">
+              소셜 계정 연동 <em>1:1</em> LinkedIn 임포트
+            </div>
+            <div class="rel-item">
+              소셜 계정 연동 <em>1:1</em> 리멤버 명함 임포트
+            </div>
+            <div class="rel-item">
+              사용자 프로필 <em>1:N</em> 명함 교환 이력
+            </div>
+            <div class="rel-item">
+              네트워크 추천 신호 <em>→</em> 추천 점수 (network 가중치)
+            </div>
+            <div class="rel-item">
+              연결 추천 <em>→</em> 알림 발송 이력 (연결 제안 알림)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================
+     알림/개인화 (6개)
+     ============================== -->
+      <div class="domain" id="d-notify">
+        <div class="insight">
+          💡 같은 추천 공고라도 누가, 언제, 어떤 채널로, 어떤 문구로 받느냐에
+          따라 오픈율이 3-5배 차이납니다. 사용자별 최적 발송 시간 학습, 채널
+          피로도 관리, 개인화 메시지 템플릿을 통해 추천 노출을 실제 지원으로
+          전환시킵니다.
+        </div>
+        <div class="grid">
+          <div class="card">
+            <div class="card-head h-purple">알림 선호 설정</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">pref_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">알림 유형</span></div>
+                <div class="evs">
+                  <span class="ev">recommendation</span
+                  ><span class="ev">offer</span
+                  ><span class="ev">application</span
+                  ><span class="ev">network</span
+                  ><span class="ev">market_insight</span
+                  ><span class="ev">marketing</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">허용 채널</span></div>
+                <div class="evs">
+                  <span class="ev">push</span><span class="ev">email</span
+                  ><span class="ev">kakao</span><span class="ev">sms</span
+                  ><span class="ev">in_app</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">방해금지 시작/종료 시간</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">방해금지 요일</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">mon</span><span class="ev">tue</span
+                  ><span class="ev">wed</span><span class="ev">thu</span
+                  ><span class="ev">fri</span><span class="ev">sat</span
+                  ><span class="ev">sun</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">추천 알림 최대 건수/일</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-purple">사용자 최적 발송 시간</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">send_time_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">채널</span></div>
+                <div class="evs">
+                  <span class="ev">push</span><span class="ev">email</span
+                  ><span class="ev">kakao</span><span class="ev">sms</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">최적 요일 (JSON)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">최적 시간대 Top3 (JSON)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">평균 오픈율 / 클릭률 (%)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">모델 신뢰도</span></div>
+                <div class="evs">
+                  <span class="ev">low</span><span class="ev">medium</span
+                  ><span class="ev">high</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-purple">알림 템플릿</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">template_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">템플릿명</span></div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">알림 유형</span></div>
+                <div class="evs">
+                  <span class="ev">recommendation</span
+                  ><span class="ev">offer</span
+                  ><span class="ev">application_status</span
+                  ><span class="ev">network</span
+                  ><span class="ev">market_insight</span
+                  ><span class="ev">re_engagement</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">채널</span></div>
+                <div class="evs">
+                  <span class="ev">push</span><span class="ev">email</span
+                  ><span class="ev">kakao</span><span class="ev">sms</span
+                  ><span class="ev">in_app</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">제목 템플릿 / 본문 템플릿 (변수 포함)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">개인화 변수 목록 (JSON)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">타겟 세그먼트</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">active_seeker</span
+                  ><span class="ev">passive_seeker</span
+                  ><span class="ev">new_user</span
+                  ><span class="ev">dormant</span
+                  ><span class="ev">high_value</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">A/B 테스트 그룹</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">control</span
+                  ><span class="ev">variant_a</span
+                  ><span class="ev">variant_b</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">평균 오픈율 / 클릭률</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">상태</span></div>
+                <div class="evs">
+                  <span class="ev">draft</span><span class="ev">active</span
+                  ><span class="ev">paused</span
+                  ><span class="ev">archived</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-purple">알림 발송 이력</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">notification_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id / template_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">recommendation_id (옵션)</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">발송 채널</span></div>
+                <div class="evs">
+                  <span class="ev">push</span><span class="ev">email</span
+                  ><span class="ev">kakao</span><span class="ev">sms</span
+                  ><span class="ev">in_app</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">실제 발송 제목 / 내용</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">발송 상태</span></div>
+                <div class="evs">
+                  <span class="ev">ready</span><span class="ev">sent</span
+                  ><span class="ev">failed</span><span class="ev">opened</span
+                  ><span class="ev">clicked</span
+                  ><span class="ev">unsubscribed</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">발송 / 오픈 / 클릭 일시</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-purple">채널 피로도 관리</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">fatigue_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">채널</span></div>
+                <div class="evs">
+                  <span class="ev">push</span><span class="ev">email</span
+                  ><span class="ev">kakao</span><span class="ev">sms</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">최근 7일 발송 수 / 오픈 수 / 클릭 수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">연속 무반응 일수</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">피로도 점수 (0-100)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">피로도 등급</span></div>
+                <div class="evs">
+                  <span class="ev">normal</span><span class="ev">caution</span
+                  ><span class="ev">high</span
+                  ><span class="ev">suppressed</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">발송 억제 해제 예정일</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head h-purple">사용자 세그먼트</div>
+            <div class="card-body">
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">segment_id</span
+                  ><span class="badges"><span class="badge pk">PK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">user_id</span
+                  ><span class="badges"><span class="badge fk">FK</span></span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이직 의향 세그먼트</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">hot_seeker</span
+                  ><span class="ev">warm_seeker</span
+                  ><span class="ev">passive_seeker</span
+                  ><span class="ev">dormant</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">활동 세그먼트</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">power_user</span
+                  ><span class="ev">regular</span><span class="ev">at_risk</span
+                  ><span class="ev">churned</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">가치 세그먼트</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">high_value</span
+                  ><span class="ev">mid_value</span
+                  ><span class="ev">low_value</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top"><span class="col">커리어 단계</span></div>
+                <div class="evs">
+                  <span class="ev">junior</span><span class="ev">mid</span
+                  ><span class="ev">senior</span><span class="ev">lead</span
+                  ><span class="ev">executive</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이직 준비도 점수 (0-100)</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">이직 예상 시점</span>
+                </div>
+                <div class="evs">
+                  <span class="ev">within_1m</span
+                  ><span class="ev">within_3m</span
+                  ><span class="ev">within_6m</span
+                  ><span class="ev">over_6m</span
+                  ><span class="ev">unknown</span>
+                </div>
+              </div>
+              <div class="crow">
+                <div class="crow-top">
+                  <span class="col">세그먼트 산출 모델 버전</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rel-box">
+          <div class="rel-title">주요 관계 및 추천 시스템 연결</div>
+          <div class="rel-list">
+            <div class="rel-item">
+              사용자 프로필 <em>1:N</em> 알림 선호 설정
+            </div>
+            <div class="rel-item">
+              사용자 프로필 <em>1:N</em> 사용자 최적 발송 시간
+            </div>
+            <div class="rel-item">
+              사용자 프로필 <em>1:1</em> 사용자 세그먼트
+            </div>
+            <div class="rel-item">알림 템플릿 <em>1:N</em> 알림 발송 이력</div>
+            <div class="rel-item">추천 결과 <em>1:N</em> 알림 발송 이력</div>
+            <div class="rel-item">
+              채널 피로도 <em>→</em> 알림 발송 (억제 조건 체크)
+            </div>
+            <div class="rel-item">
+              사용자 세그먼트 <em>→</em> 알림 템플릿 (타겟 세그먼트 매핑)
+            </div>
+            <div class="rel-item">
+              최적 발송 시간 <em>→</em> 알림 발송 이력 (스케줄링)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /main -->
+
+    <script>
+      function show(id, btn) {
+        document
+          .querySelectorAll(".domain")
+          .forEach((d) => d.classList.remove("on"));
+        document
+          .querySelectorAll(".tab")
+          .forEach((b) => b.classList.remove("on"));
+        document.getElementById("d-" + id).classList.add("on");
+        btn.classList.add("on");
+        btn.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+      }
+    </script>
+  </body>
+</html>
