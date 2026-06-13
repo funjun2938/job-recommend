@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, ArrowRight, Sparkles, Shield } from 'lucide-react'
-import { PROVIDERS, buildProfileFromProvider, type Provider } from '@/lib/connect'
-import { getMockResult } from '@/lib/mock-result'
+import { PROVIDERS, buildUnifiedProfile, toStage1, type Provider } from '@/lib/connect'
 import { buildSync, setStoredSync } from '@/lib/network'
 
 // 브랜드 아이콘 (lucide 미제공 → 인라인 SVG)
@@ -42,19 +41,21 @@ export function ConnectHero() {
     // 연동 지연 시뮬레이션
     await new Promise((r) => setTimeout(r, 1400))
 
-    const stage1 = buildProfileFromProvider(provider)
-    const result = getMockResult(stage1)
+    // 어느 provider든 우리 표준 규격(UnifiedProfile)으로 정규화
+    const profile = buildUnifiedProfile(provider)
+    const stage1 = toStage1(profile)
 
     // 명함첩/네트워크도 함께 연동된 상태로 (결과에서 즉시 네트워크 맵 노출)
     setStoredSync(buildSync(stage1))
 
-    sessionStorage.setItem('analysisResult', JSON.stringify(result))
+    sessionStorage.setItem('unifiedProfile', JSON.stringify(profile))
     sessionStorage.setItem('stage1Data', JSON.stringify(stage1))
     sessionStorage.setItem('stage2Data', '')
     sessionStorage.setItem('skippedStage2', 'true')
     sessionStorage.setItem('connectedProvider', provider)
 
-    router.push('/result')
+    // 먼저 "이렇게 분석했어요" 연동 결과 화면으로
+    router.push('/connected')
   }
 
   return (
