@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   CheckCircle2, ArrowRight, Users, GitBranch,
-  Briefcase, ShieldCheck, Plus, Loader2,
+  Briefcase, Plus, Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -116,13 +116,6 @@ export function ConnectedProfile() {
             </div>
           </div>
         )}
-
-        {/* 표준 규격 배지 */}
-        <div className="flex items-center gap-2 text-[11px] text-gray-500 bg-white border border-gray-100 rounded-xl px-3 py-2">
-          <ShieldCheck size={13} className="text-indigo-500 flex-shrink-0" />
-          <span>어느 서비스로 연동하든 <b className="text-gray-700">동일한 표준 규격</b>으로 누적돼요</span>
-          <code className="ml-auto text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{profile.spec}</code>
-        </div>
 
         {/* 표준 프로필 카드 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
