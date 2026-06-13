@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Share2, Info, FileText, MessageCircle } from 'lucide-react'
+import { ChevronLeft, Share2, FileText, MessageCircle, Sparkles, Heart } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { toast } from 'sonner'
 import { FadeIn, SlideUp, ScaleIn } from '@/components/result/FadeIn'
@@ -11,20 +11,14 @@ import { DiagnosisCard } from '@/components/result/DiagnosisCard'
 import { RecommendGrid } from '@/components/result/RecommendGrid'
 import { GapAnalysis } from '@/components/result/GapAnalysis'
 import { ActionChecklist } from '@/components/result/ActionChecklist'
-import { Warnings } from '@/components/result/Warnings'
 import { AlertSignup } from '@/components/result/AlertSignup'
 import { LiveJobs } from '@/components/result/LiveJobs'
 import { SalaryBenchmark } from '@/components/result/SalaryBenchmark'
 import { ReadinessScore } from '@/components/result/ReadinessScore'
 import { ShareCard } from '@/components/result/ShareCard'
-import { TrendingSkills } from '@/components/result/TrendingSkills'
-import { PeerMoves } from '@/components/result/PeerMoves'
 import { CompanyInsightTeaser } from '@/components/result/CompanyInsightTeaser'
 import { NetworkSection } from '@/components/result/NetworkSection'
 import { ResumeBuilder } from '@/components/result/ResumeBuilder'
-import { JobTimeline } from '@/components/result/JobTimeline'
-import { DataPrivacyBadge } from '@/components/result/DataPrivacyBadge'
-import { Heart } from 'lucide-react'
 import type { AnalysisResult, Stage1Data, Stage2Data } from '@/lib/types'
 
 export default function ResultPage() {
@@ -121,19 +115,6 @@ export default function ResultPage() {
           </div>
         </ScaleIn>
 
-        {/* 건너뛰기 배너 */}
-        {skipped && (
-          <FadeIn delay={0.05}>
-            <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl p-4">
-              <Info size={15} className="text-amber-500 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-amber-700 leading-relaxed">
-                회사 정보를 추가하면 연봉 분석·추천 정확도가 더 올라가요.{' '}
-                <Link href="/analyze" className="underline font-bold">다시 분석</Link>
-              </p>
-            </div>
-          </FadeIn>
-        )}
-
         {/* ① 이직 준비도 점수 */}
         {stage1 && (
           <FadeIn delay={0.1}>
@@ -155,6 +136,27 @@ export default function ResultPage() {
           <RecommendGrid recommendations={result.recommendations} />
         </SlideUp>
 
+        {/* ③b 정밀 추천 게이트 — 현황 입력 시 직무 맞춤 추천 */}
+        {skipped && (
+          <SlideUp delay={0.22}>
+            <Link
+              href="/analyze"
+              className="block bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl p-5 text-white active:opacity-90"
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <Sparkles size={16} className="text-white" />
+                <span className="font-black text-base">직무 맞춤 정밀 추천</span>
+              </div>
+              <p className="text-indigo-100 text-xs leading-relaxed">
+                현황을 1분만 입력하면 연봉·직무에 딱 맞는 추천으로 정확도가 크게 올라가요.
+              </p>
+              <span className="inline-flex items-center gap-1 mt-3 bg-white/15 px-3 py-1.5 rounded-xl text-xs font-bold">
+                정밀 추천 받기 <ChevronLeft size={14} className="rotate-180" />
+              </span>
+            </Link>
+          </SlideUp>
+        )}
+
         {/* ④ 실시간 채용공고 */}
         {stage1 && (
           <FadeIn delay={0.25}>
@@ -169,25 +171,11 @@ export default function ResultPage() {
           </FadeIn>
         )}
 
-        {/* ⑥ 동료 이동 경로 */}
-        {stage1 && (
-          <FadeIn delay={0.3}>
-            <PeerMoves jobCategory={stage1.jobCategory} companySize={stage1.companySize} />
-          </FadeIn>
-        )}
-
-        {/* ⑥b 명함첩 연동 — 네트워크 맵 + 유사 커리어 경로 (외부 데이터) */}
+        {/* ⑥ 명함첩 연동 — 네트워크 맵 + 유사 커리어 경로 (외부 데이터) */}
         {stage1 && (
           <SlideUp delay={0.32}>
             <NetworkSection stage1={stage1} />
           </SlideUp>
-        )}
-
-        {/* ⑦ 인기 스킬 트렌드 */}
-        {stage1 && (
-          <FadeIn delay={0.33}>
-            <TrendingSkills jobCategory={stage1.jobCategory} userSkills={stage1.skills} />
-          </FadeIn>
         )}
 
         {/* ⑧ 갭 분석 */}
@@ -200,24 +188,12 @@ export default function ResultPage() {
           <ActionChecklist actionPlan={result.actionPlan} />
         </FadeIn>
 
-        {/* ⑩ 주의사항 */}
-        {result.warnings?.length > 0 && (
-          <FadeIn delay={0.4}>
-            <Warnings warnings={result.warnings} />
-          </FadeIn>
-        )}
-
         {/* ⑪ 회사 인사이트 티저 */}
         {stage2?.companyName && (
           <FadeIn delay={0.42}>
             <CompanyInsightTeaser companyName={stage2.companyName} />
           </FadeIn>
         )}
-
-        {/* ⑫ 채용 캘린더 */}
-        <FadeIn delay={0.44}>
-          <JobTimeline />
-        </FadeIn>
 
         {/* ⑫b 공유 카드 */}
         {stage1 && (
@@ -229,11 +205,6 @@ export default function ResultPage() {
         {/* ⑬ 알림 신청 */}
         <FadeIn delay={0.48}>
           <AlertSignup stage1={stage1} />
-        </FadeIn>
-
-        {/* 데이터 보호 배지 */}
-        <FadeIn delay={0.58}>
-          <DataPrivacyBadge />
         </FadeIn>
 
         {/* ⑭ 이력서 빌더 */}

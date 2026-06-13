@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, TrendingUp, FileText, MessageCircle, Heart, Settings, Zap, ChevronRight } from 'lucide-react'
-import { getUserPlan } from '@/lib/gate'
+import { ArrowRight, TrendingUp, FileText, MessageCircle, Heart, Settings, ChevronRight } from 'lucide-react'
 import { getFavorites, type FavoriteCompany } from '@/lib/favorites'
 
 const QUICK_ACTIONS = [
@@ -14,20 +13,10 @@ const QUICK_ACTIONS = [
 ]
 
 export default function DashboardPage() {
-  const [plan,    setPlan]    = useState<string>('free')
-  const [favs,    setFavs]    = useState<FavoriteCompany[]>([])
-  const [upgraded, setUpgraded] = useState(false)
+  const [favs, setFavs] = useState<FavoriteCompany[]>([])
 
   useEffect(() => {
-    setPlan(getUserPlan())
     setFavs(getFavorites())
-
-    // Stripe 결제 성공 후 리다이렉트
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('upgraded') === '1') {
-      setUpgraded(true)
-      // TODO: Stripe session 확인 후 plan 업데이트
-    }
   }, [])
 
   const lastResult = typeof window !== 'undefined'
@@ -57,47 +46,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex-1 px-4 py-5 space-y-4 pb-10">
-        {/* 업그레이드 성공 배너 */}
-        {upgraded && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
-            <Zap size={18} className="text-emerald-600 flex-shrink-0" />
-            <div>
-              <p className="font-bold text-emerald-800 text-sm">Pro 플랜 시작!</p>
-              <p className="text-xs text-emerald-600">7일 무료 체험이 시작됐어요. 모든 기능을 마음껏 사용하세요!</p>
-            </div>
-          </div>
-        )}
-
-        {/* 플랜 상태 */}
-        <div className={`rounded-2xl p-5 ${
-          plan === 'free'
-            ? 'bg-gray-100 border border-gray-200'
-            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-        }`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-xs font-semibold ${plan === 'free' ? 'text-gray-500' : 'text-indigo-200'}`}>
-                현재 플랜
-              </p>
-              <p className={`font-black text-lg mt-0.5 ${plan === 'free' ? 'text-gray-900' : 'text-white'}`}>
-                {plan === 'free' ? 'Free' : plan === 'pro' ? 'Pro ✨' : 'Team 🏢'}
-              </p>
-            </div>
-            {plan === 'free' && (
-              <Link href="/pricing"
-                className="flex items-center gap-1.5 bg-indigo-600 text-white text-xs font-bold px-3 py-2 rounded-xl">
-                <Zap size={12} /> 업그레이드
-              </Link>
-            )}
-            {plan !== 'free' && (
-              <p className="text-indigo-200 text-xs">무제한 사용 중</p>
-            )}
-          </div>
-          {plan === 'free' && (
-            <p className="text-xs text-gray-500 mt-2">월 1회 분석 제한 · Pro로 업그레이드하면 무제한</p>
-          )}
-        </div>
-
         {/* 퀵 액션 */}
         <div className="grid grid-cols-4 gap-2">
           {QUICK_ACTIONS.map((action) => {
