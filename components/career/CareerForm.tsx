@@ -21,7 +21,8 @@ export function CareerForm() {
       && !!sessionStorage.getItem('unifiedProfile')
   )
   const [groupKey, setGroupKey] = useState('')
-  const [jobCategory, setJobCategory] = useState('')
+  const [sub, setSub] = useState('')              // 상세 직군 (또는 CUSTOM)
+  const [customText, setCustomText] = useState('') // 직접 입력 직군명
   const [experienceYears, setExp] = useState('')
   const [companySize, setSize] = useState('')
   const [salaryRange, setSalary] = useState('')
@@ -29,6 +30,12 @@ export function CareerForm() {
   const [skills, setSkills] = useState<string[]>([])
   const [skillInput, setSkillInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const CUSTOM = '__custom__'
+  const group = CATEGORY_GROUPS.find((g) => g.key === groupKey)
+  const isEtcGroup = group?.label === '기타'
+  // 직접 입력이면 자유 텍스트, 아니면 선택한 상세 직군
+  const jobCategory = sub === CUSTOM ? customText.trim() : sub
 
   const valid = jobCategory && experienceYears && companySize && salaryRange
 
@@ -104,30 +111,47 @@ export function CareerForm() {
             : '간단히 입력하면 바로 추천을 받을 수 있어요. 나중에 계정 연동으로 더 보강할 수 있어요.'}
         </p>
 
-        {/* 직군 — 1단계: 대분류 */}
+        {/* 직군 — 1단계: 대분류 ('기타'는 '직접 입력'으로 표기) */}
         <div>
           <label className="block text-sm font-bold text-gray-900 mb-2">직군 대분류 <span className="text-indigo-500">*</span></label>
           <div className="grid grid-cols-2 gap-2">
             {CATEGORY_GROUPS.map((g) => (
               <Chip
                 key={g.key}
-                value={`${g.emoji} ${g.label}`}
+                value={g.label === '기타' ? '✏️ 직접 입력' : `${g.emoji} ${g.label}`}
                 selected={groupKey === g.key}
-                onClick={() => { setGroupKey(g.key); setJobCategory('') }}
+                onClick={() => {
+                  setGroupKey(g.key)
+                  setCustomText('')
+                  setSub(g.label === '기타' ? CUSTOM : '')   // 직접입력 그룹이면 바로 자유 입력
+                }}
               />
             ))}
           </div>
         </div>
 
-        {/* 직군 — 2단계: 상세 직군 */}
-        {groupKey && (
+        {/* 직군 — 2단계: 상세 직군 (직접 입력 포함) */}
+        {group && (
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">상세 직군 <span className="text-indigo-500">*</span></label>
-            <div className="flex flex-wrap gap-2">
-              {(CATEGORY_GROUPS.find((g) => g.key === groupKey)?.subs ?? []).map((s) => (
-                <Chip key={s} value={s} selected={jobCategory === s} onClick={() => setJobCategory(s)} />
-              ))}
-            </div>
+            <label className="block text-sm font-bold text-gray-900 mb-2">
+              {isEtcGroup ? '직군 직접 입력' : '상세 직군'} <span className="text-indigo-500">*</span>
+            </label>
+            {!isEtcGroup && (
+              <div className="flex flex-wrap gap-2">
+                {group.subs.map((s) => (
+                  <Chip key={s} value={s} selected={sub === s} onClick={() => setSub(s)} />
+                ))}
+                <Chip value="✏️ 직접 입력" selected={sub === CUSTOM} onClick={() => setSub(CUSTOM)} />
+              </div>
+            )}
+            {sub === CUSTOM && (
+              <input
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                placeholder="직군을 직접 입력하세요 (예: 핀테크 PM, 바이오 연구원)"
+                className="w-full mt-2 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              />
+            )}
           </div>
         )}
 
