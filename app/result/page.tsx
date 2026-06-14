@@ -19,14 +19,22 @@ import { ShareCard } from '@/components/result/ShareCard'
 import { CompanyInsightTeaser } from '@/components/result/CompanyInsightTeaser'
 import { NetworkSection } from '@/components/result/NetworkSection'
 import { ResumeBuilder } from '@/components/result/ResumeBuilder'
-import type { AnalysisResult, Stage1Data, Stage2Data } from '@/lib/types'
+import { loadPreferences } from '@/lib/preferences'
+import type { AnalysisResult, Stage1Data, Stage2Data, PreferenceData } from '@/lib/types'
+
+const WORK_MODE_LABEL: Record<PreferenceData['workMode'], string> = {
+  onsite: '출근',
+  remote: '재택 우선',
+  hybrid: '하이브리드',
+  any: '근무형태 무관',
+}
 
 export default function ResultPage() {
   const router = useRouter()
   const [result,  setResult]  = useState<AnalysisResult | null>(null)
   const [stage1,  setStage1]  = useState<Stage1Data | null>(null)
   const [stage2,  setStage2]  = useState<Stage2Data | null>(null)
-  const [skipped,  setSkipped]  = useState(false)
+  const [prefs,    setPrefs]    = useState<PreferenceData | null>(null)
   const [ready,    setReady]    = useState(false)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
 
@@ -34,14 +42,13 @@ export default function ResultPage() {
     const stored  = sessionStorage.getItem('analysisResult')
     const s1      = sessionStorage.getItem('stage1Data')
     const s2      = sessionStorage.getItem('stage2Data')
-    const didSkip = sessionStorage.getItem('skippedStage2')
 
     if (!stored) { router.replace('/analyze'); return }
     try {
       setResult(JSON.parse(stored))
       if (s1) setStage1(JSON.parse(s1))
       if (s2 && s2 !== '') setStage2(JSON.parse(s2))
-      setSkipped(didSkip === 'true')
+      setPrefs(loadPreferences())
       setTimeout(() => setReady(true), 50) // 마운트 후 애니메이션 시작
     } catch { router.replace('/analyze') }
   }, [router])
@@ -131,13 +138,52 @@ export default function ResultPage() {
           />
         </FadeIn>
 
+        {/* ②b 원하는 조건 반영됨 — 선호 서베이 완료 시 */}
+        {prefs && (
+          <FadeIn delay={0.17}>
+            <div className="bg-white border border-indigo-100 rounded-2xl p-4">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <Sparkles size={14} className="text-indigo-500" />
+                <span className="text-xs font-bold text-indigo-600">원하시는 조건 반영됨</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {prefs.desiredSalary && (
+                  <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-medium">
+                    희망연봉 {prefs.desiredSalary}
+                  </span>
+                )}
+                {prefs.workMode !== 'any' && (
+                  <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-medium">
+                    {WORK_MODE_LABEL[prefs.workMode]}
+                  </span>
+                )}
+                {prefs.workLocation && prefs.workLocation !== '무관' && (
+                  <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-medium">
+                    {prefs.workLocation}
+                  </span>
+                )}
+                {prefs.companyType && prefs.companyType !== '무관' && (
+                  <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-medium">
+                    {prefs.companyType}
+                  </span>
+                )}
+                {prefs.priorities.slice(0, 3).map((p) => (
+                  <span key={p} className="px-2.5 py-1 rounded-lg bg-violet-50 text-violet-700 text-xs font-medium">
+                    #{p}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
+        )}
+
         {/* ③ 추천 기업군 */}
         <SlideUp delay={0.2}>
           <RecommendGrid recommendations={result.recommendations} />
         </SlideUp>
 
-        {/* ③b 정밀 추천 게이트 — 현황 입력 시 직무 맞춤 추천 */}
-        {skipped && (
+        {/* ③b 정밀 추천 게이트 — 선호 미입력 시 원하는 조건 받기 유도 */}
+        {!prefs && (
           <SlideUp delay={0.22}>
             <Link
               href="/analyze"
@@ -145,10 +191,10 @@ export default function ResultPage() {
             >
               <div className="flex items-center gap-2 mb-1.5">
                 <Sparkles size={16} className="text-white" />
-                <span className="font-black text-base">직무 맞춤 정밀 추천</span>
+                <span className="font-black text-base">원하는 조건으로 정밀 추천</span>
               </div>
               <p className="text-indigo-100 text-xs leading-relaxed">
-                현황을 1분만 입력하면 연봉·직무에 딱 맞는 추천으로 정확도가 크게 올라가요.
+                원하는 조건(희망연봉·근무지·재택 등)을 알려주면 추천 정확도가 크게 올라가요. 1분이면 돼요.
               </p>
               <span className="inline-flex items-center gap-1 mt-3 bg-white/15 px-3 py-1.5 rounded-xl text-xs font-bold">
                 정밀 추천 받기 <ChevronLeft size={14} className="rotate-180" />

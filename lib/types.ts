@@ -18,6 +18,16 @@ export interface Stage2Data {
   npsScore: number
 }
 
+export interface PreferenceData {
+  desiredSalary: string          // 희망 연봉대 (예: '7천~8천만원')
+  workLocation: string           // 희망 근무지 (예: '서울 강남권', '수도권', '재택 우선', '무관')
+  workMode: 'onsite' | 'remote' | 'hybrid' | 'any'   // 근무 형태
+  priorities: string[]           // 가장 중요한 것 (연봉상승/성장/워라밸/안정성/조직문화/커리어전환/리더십) 다중
+  companyType: string            // 희망 회사유형 (스타트업/중견/대기업/외국계/공공/무관)
+  dealbreakers: string[]         // 기피 조건 (잦은 야근/연봉동결/경직된문화/지방근무/잦은출장 등) 다중
+  motivation: string             // 이직으로 가장 이루고 싶은 것 (한 줄)
+}
+
 export interface ActionItem {
   action: string
   timeline: string

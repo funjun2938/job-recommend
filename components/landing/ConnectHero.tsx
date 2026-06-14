@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, ArrowRight, Sparkles, Shield } from 'lucide-react'
+import { Loader2, ArrowRight, Sparkles, Shield, PenLine } from 'lucide-react'
 import { PROVIDERS, buildUnifiedProfile, toStage1, type Provider } from '@/lib/connect'
 import { buildSync, setStoredSync } from '@/lib/network'
 
@@ -77,14 +77,35 @@ export function ConnectHero() {
         <p className="text-gray-500 text-[15px]">연동만 하면 끝. 입력 없이 추천부터 받아보세요.</p>
       </div>
 
-      {/* 연동 버튼 */}
+      {/* 진입 버튼 */}
       <div className="space-y-3 mt-9">
+        {/* 커리어 직접 입력 — 연동과 동일 크기, 맨 위 */}
+        <Link
+          href="/career"
+          className="w-full flex items-center gap-3.5 p-4 rounded-2xl border-2 border-indigo-200 bg-indigo-50/40 text-left transition active:scale-[0.98]"
+        >
+          <span className="w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0 bg-indigo-600">
+            <PenLine size={20} />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-bold text-gray-900 text-[15px]">커리어 직접 입력</span>
+            <span className="block text-xs text-gray-400 mt-0.5">연동 없이 바로 입력하고 시작해요</span>
+          </span>
+          <ArrowRight size={18} className="text-indigo-300 flex-shrink-0" />
+        </Link>
+
+        <div className="flex items-center gap-2 py-0.5">
+          <div className="flex-1 h-px bg-gray-100" />
+          <span className="text-[11px] text-gray-300">또는 계정 연동</span>
+          <div className="flex-1 h-px bg-gray-100" />
+        </div>
+
         {PROVIDERS.map((p) => {
           const isLoading = loading === p.key
           return (
             <button
               key={p.key}
-              onClick={() => connect(p.key)}
+              onClick={() => connect(p.key as Provider)}
               disabled={!!loading}
               className="w-full flex items-center gap-3.5 p-4 rounded-2xl border-2 text-left transition active:scale-[0.98] disabled:opacity-60"
               style={{ borderColor: isLoading ? p.brand : '#e5e7eb' }}
@@ -93,7 +114,7 @@ export function ConnectHero() {
                 className="w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0"
                 style={{ background: p.brand }}
               >
-                {isLoading ? <Loader2 size={20} className="animate-spin" /> : ICON[p.key]}
+                {isLoading ? <Loader2 size={20} className="animate-spin" /> : ICON[p.key as Provider]}
               </span>
               <span className="flex-1 min-w-0">
                 <span className="block font-bold text-gray-900 text-[15px]">
@@ -106,14 +127,6 @@ export function ConnectHero() {
           )
         })}
       </div>
-
-      {/* 직접 입력 (보조) */}
-      <Link
-        href="/analyze"
-        className="block text-center text-sm text-gray-400 underline underline-offset-4 mt-6"
-      >
-        연동 없이 직접 입력할래요
-      </Link>
 
       {/* 신뢰 한 줄 */}
       <p className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400 mt-6">

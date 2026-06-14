@@ -20,70 +20,16 @@ import type {
   RecommendationScore,
   ScoreWeights,
 } from './types'
+import { getCategory } from './categories'
 
 // 3축 추천 점수 기본 가중치 (recommendation_scores 테이블 기본값과 일치)
 export const SCORE_WEIGHTS: ScoreWeights = { survey: 0.5, network: 0.25, career: 0.25 }
 
-// 직군별 회사 풀 (명함첩에 등장할 법한 회사들)
-const COMPANY_POOLS: Record<string, { name: string; industry: string; titles: string[] }[]> = {
-  IT: [
-    { name: '토스', industry: '핀테크', titles: ['프로덕트 오너', '백엔드 엔지니어', '데이터 분석가'] },
-    { name: '카카오', industry: 'IT 플랫폼', titles: ['서버 개발자', 'PM', 'UX 디자이너'] },
-    { name: '네이버', industry: 'IT 플랫폼', titles: ['프론트엔드 개발자', '기획자', 'AI 엔지니어'] },
-    { name: '당근', industry: '커뮤니티 커머스', titles: ['iOS 개발자', '그로스 PM'] },
-    { name: '쿠팡', industry: '이커머스', titles: ['SDE', '프로덕트 매니저'] },
-    { name: '배달의민족', industry: '푸드테크', titles: ['안드로이드 개발자', '서비스 기획'] },
-    { name: '라인', industry: '메신저', titles: ['플랫폼 엔지니어'] },
-    { name: '야놀자', industry: '트래블테크', titles: ['데이터 엔지니어', 'PO'] },
-    { name: '뱅크샐러드', industry: '핀테크', titles: ['ML 엔지니어'] },
-    { name: '무신사', industry: '패션 커머스', titles: ['백엔드 개발자'] },
-  ],
-  SALES: [
-    { name: 'Salesforce', industry: 'B2B SaaS', titles: ['Account Executive', 'SDR 리드'] },
-    { name: 'SAP Korea', industry: '엔터프라이즈 SW', titles: ['세일즈 매니저'] },
-    { name: 'Oracle', industry: '엔터프라이즈 SW', titles: ['클라우드 세일즈'] },
-    { name: '토스', industry: '핀테크', titles: ['B2B 세일즈', '파트너십'] },
-    { name: '쿠팡', industry: '이커머스', titles: ['셀러 BD', '카테고리 매니저'] },
-    { name: '삼성전자', industry: '제조', titles: ['해외영업', 'B2B 영업'] },
-    { name: 'AWS', industry: '클라우드', titles: ['Solutions Sales'] },
-    { name: 'HubSpot', industry: 'B2B SaaS', titles: ['Inbound Sales'] },
-    { name: 'LG전자', industry: '제조', titles: ['글로벌 마케팅'] },
-    { name: '야놀자', industry: '트래블테크', titles: ['제휴 BD'] },
-  ],
-  FINANCE: [
-    { name: '카카오뱅크', industry: '인터넷은행', titles: ['리스크 심사역', '재무 기획'] },
-    { name: '토스뱅크', industry: '인터넷은행', titles: ['여신 기획', '자금 운용'] },
-    { name: '미래에셋', industry: '증권', titles: ['애널리스트', 'IB 심사역'] },
-    { name: '삼성자산운용', industry: '자산운용', titles: ['펀드매니저'] },
-    { name: '한국투자증권', industry: '증권', titles: ['리서치', 'PB'] },
-    { name: 'KB국민은행', industry: '은행', titles: ['기업금융', '심사역'] },
-    { name: '뱅크샐러드', industry: '핀테크', titles: ['데이터 기반 신용평가'] },
-    { name: '신한카드', industry: '카드', titles: ['상품 기획'] },
-    { name: 'JP모건', industry: 'IB', titles: ['Analyst'] },
-    { name: '삼일회계법인', industry: '회계', titles: ['회계사', '컨설턴트'] },
-  ],
-  GENERAL: [
-    { name: '삼성전자', industry: '제조', titles: ['전략기획', '인사'] },
-    { name: 'LG전자', industry: '제조', titles: ['마케팅', '구매'] },
-    { name: 'CJ제일제당', industry: 'F&B', titles: ['브랜드 매니저'] },
-    { name: 'SK', industry: '에너지/통신', titles: ['경영기획'] },
-    { name: '현대자동차', industry: '모빌리티', titles: ['상품기획'] },
-    { name: '카카오', industry: 'IT 플랫폼', titles: ['HR', '운영'] },
-    { name: '쿠팡', industry: '이커머스', titles: ['오퍼레이션 매니저'] },
-    { name: '배달의민족', industry: '푸드테크', titles: ['마케터'] },
-    { name: '토스', industry: '핀테크', titles: ['오퍼레이션'] },
-    { name: '네이버', industry: 'IT 플랫폼', titles: ['서비스 운영'] },
-  ],
-}
-
+// 직군 도메인 카탈로그(lib/categories.ts)에서 직군별 네트워크 회사 풀을 가져온다.
+// 전(全) 직군에서 직군 맥락에 맞는 명함첩 네트워크 맵/커리어 경로가 생성된다.
 function poolFor(jobCategory: string) {
-  if (jobCategory.includes('개발') || jobCategory.includes('기획') || jobCategory.includes('디자인') || jobCategory.includes('PM'))
-    return { key: 'IT', pool: COMPANY_POOLS.IT }
-  if (jobCategory.includes('영업') || jobCategory.includes('BD') || jobCategory.includes('마케팅'))
-    return { key: 'SALES', pool: COMPANY_POOLS.SALES }
-  if (jobCategory.includes('금융') || jobCategory.includes('회계'))
-    return { key: 'FINANCE', pool: COMPANY_POOLS.FINANCE }
-  return { key: 'GENERAL', pool: COMPANY_POOLS.GENERAL }
+  const domain = getCategory(jobCategory)
+  return { key: domain.key, pool: domain.networkCompanies }
 }
 
 // 간단한 결정론적 해시 → 시드

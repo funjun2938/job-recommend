@@ -98,7 +98,7 @@ export function ConnectedProfile() {
                 return (
                   <button
                     key={p.key}
-                    onClick={() => addProvider(p.key)}
+                    onClick={() => addProvider(p.key as Provider)}
                     disabled={!!adding}
                     className="flex items-center gap-3 bg-white rounded-xl p-3 border border-gray-100 active:scale-[0.99] disabled:opacity-60 transition"
                   >

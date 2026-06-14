@@ -12,23 +12,30 @@
 import type { Stage1Data } from './types'
 
 export type Provider = 'linkedin' | 'remember' | 'github'
+// 연동 소스 + 직접 입력
+export type Source = Provider | 'manual'
 
 export interface ProviderMeta {
-  key: Provider
+  key: Source
   name: string
   tagline: string
   brand: string
 }
 
+// 연동 가능한 외부 소스 (홈/추가연동 버튼)
 export const PROVIDERS: ProviderMeta[] = [
   { key: 'linkedin', name: 'LinkedIn', tagline: '경력·직무를 불러와요', brand: '#0A66C2' },
   { key: 'remember', name: '리멤버',   tagline: '명함첩으로 인맥까지', brand: '#2D3FE0' },
   { key: 'github',   name: 'GitHub',   tagline: '개발 활동을 분석해요', brand: '#181717' },
 ]
 
+const MANUAL_META: ProviderMeta = {
+  key: 'manual', name: '직접 입력', tagline: '커리어를 직접 입력했어요', brand: '#475569',
+}
+
 // 소스별 기여 (어디서 무엇을 알아냈는지)
 export interface SourceContribution {
-  source: Provider
+  source: Source
   summary: string                      // 사용자용 한 줄 요약
   highlights: string[]                 // 이 소스가 알려준 핵심 (자연어)
 }
@@ -36,7 +43,7 @@ export interface SourceContribution {
 // ── 우리 표준 프로필 규격 (JobFit Unified Profile v1) ──────────
 export interface UnifiedProfile {
   spec: 'jobfit.unified-profile/v1'
-  sources: Provider[]                  // 연동된 소스들 (누적)
+  sources: Source[]                    // 연동된 소스들 (누적, 직접입력 포함)
   displayName: string
   headline: string
 
@@ -204,6 +211,59 @@ export function buildProfileFromProvider(provider: Provider): Stage1Data {
   return toStage1(buildUnifiedProfile(provider))
 }
 
-export function providerMeta(provider: Provider): ProviderMeta {
-  return PROVIDERS.find((p) => p.key === provider)!
+export function providerMeta(source: Source): ProviderMeta {
+  if (source === 'manual') return MANUAL_META
+  return PROVIDERS.find((p) => p.key === source)!
+}
+
+// ── 커리어 직접 입력 (연동과 동일한 표준 규격으로 랜딩) ──────────
+export interface ManualCareerInput {
+  jobCategory: string
+  experienceYears: string
+  companySize: string
+  salaryRange: string
+  currentCompany: string
+  skills: string[]
+}
+
+function seniorityFromExperience(exp: string): string {
+  if (exp.includes('신입') || exp.startsWith('1년')) return '주니어'
+  if (exp.includes('10') || exp.includes('15')) return '리드'
+  if (exp.includes('7') || exp.includes('5~7')) return '시니어'
+  if (exp.includes('5')) return '시니어'
+  return '미들'
+}
+
+export function buildManualProfile(input: ManualCareerInput): UnifiedProfile {
+  const company = input.currentCompany.trim() || `${input.companySize} 재직`
+  const skills = input.skills.filter(Boolean)
+  const filled = [input.jobCategory, input.experienceYears, input.companySize, input.salaryRange, input.currentCompany, skills.length].filter(Boolean).length
+  return {
+    spec: 'jobfit.unified-profile/v1',
+    sources: ['manual'],
+    displayName: '직접 입력 프로필',
+    headline: `${input.jobCategory} · ${input.experienceYears}`,
+    canonical: {
+      jobCategory: input.jobCategory,
+      seniority: seniorityFromExperience(input.experienceYears),
+      experienceYears: input.experienceYears,
+      currentCompany: company,
+      companySize: input.companySize,
+      salaryRange: input.salaryRange,
+      skills,
+      careerPath: [`${company} (현재)`],
+    },
+    networkReach: null,
+    contributions: [{
+      source: 'manual',
+      summary: '입력하신 커리어를 정리했어요',
+      highlights: [
+        `${input.jobCategory} · ${input.experienceYears} 경력`,
+        `${input.companySize} 재직 · 희망 연봉대 ${input.salaryRange}`,
+        skills.length ? `보유 스킬 ${skills.slice(0, 3).join(', ')}${skills.length > 3 ? ' 등' : ''}` : '스킬은 추가 연동으로 보강 가능',
+        '다른 소스를 추가 연동하면 더 정확해져요',
+      ].filter(Boolean),
+    }],
+    completeness: Math.min(72, 40 + filled * 6),
+  }
 }
