@@ -33,6 +33,19 @@ function poolFor(jobCategory: string) {
   return { key: domain.key, pool: domain.networkCompanies }
 }
 
+// 여러 직군의 네트워크 회사를 섞어(mingle) 하나의 풀로 — 다중 소스 분석용.
+// 첫 직군(주 직군)을 앞세우고 나머지 소스 직군의 회사를 이어붙여 중복 제거.
+function pooledCompanies(categories: string[]) {
+  const seen = new Set<string>()
+  const out: { name: string; industry: string; titles: string[] }[] = []
+  for (const cat of categories) {
+    for (const c of getCategory(cat).networkCompanies) {
+      if (!seen.has(c.name)) { seen.add(c.name); out.push(c) }
+    }
+  }
+  return out
+}
+
 // 간단한 결정론적 해시 → 시드
 function seedFrom(s: string): number {
   let h = 2166136261
@@ -64,8 +77,8 @@ function movesFromExperience(exp: string): number {
  * 명함첩 기반 네트워크 맵 생성 (자산①)
  * 내 명함첩에 등장하는 회사들 = 내가 네트워킹하는 회사 맵
  */
-export function buildNetworkMap(stage1: Stage1Data): NetworkMap {
-  const { pool } = poolFor(stage1.jobCategory)
+export function buildNetworkMap(stage1: Stage1Data, extraCategories: string[] = []): NetworkMap {
+  const pool = pooledCompanies([stage1.jobCategory, ...extraCategories])
   const rand = seededRand(seedFrom(stage1.jobCategory + stage1.experienceYears + stage1.companySize))
 
   const myCompany = (stage1 as Stage1Data & { companyName?: string }).companyName || ''
@@ -100,8 +113,8 @@ export function buildNetworkMap(stage1: Stage1Data): NetworkMap {
  * 유사 커리어 경로 기반 추천 생성 (자산②)
  * "나와 비슷한 커리어를 탄 사람들이 다음에 간 회사"
  */
-export function buildCareerPath(stage1: Stage1Data): CareerPathInsight {
-  const { pool } = poolFor(stage1.jobCategory)
+export function buildCareerPath(stage1: Stage1Data, extraCategories: string[] = []): CareerPathInsight {
+  const pool = pooledCompanies([stage1.jobCategory, ...extraCategories])
   const rand = seededRand(seedFrom('path' + stage1.jobCategory + stage1.experienceYears))
 
   // 내 추정 커리어 경로
@@ -201,10 +214,10 @@ export function buildRecommendationScores(
   return scores.sort((a, b) => b.finalScore - a.finalScore)
 }
 
-/** 전체 명함첩 분석 묶음 */
-export function buildNetworkAnalysis(stage1: Stage1Data): NetworkAnalysis {
-  const networkMap = buildNetworkMap(stage1)
-  const careerPath = buildCareerPath(stage1)
+/** 전체 명함첩 분석 묶음 (extraCategories로 다중 소스 직군을 섞어 분석) */
+export function buildNetworkAnalysis(stage1: Stage1Data, extraCategories: string[] = []): NetworkAnalysis {
+  const networkMap = buildNetworkMap(stage1, extraCategories)
+  const careerPath = buildCareerPath(stage1, extraCategories)
   const scores = buildRecommendationScores(stage1, networkMap, careerPath)
   return {
     sync: buildSync(stage1),

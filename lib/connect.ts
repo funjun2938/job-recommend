@@ -60,6 +60,7 @@ export interface UnifiedProfile {
 
   networkReach: { connections: number; companies: number } | null
   contributions: SourceContribution[]  // 소스별 기여 내역
+  analysisCategories: string[]         // 분석 밍글용 직군 집합 (각 소스가 본 직군)
   completeness: number
 }
 
@@ -163,6 +164,7 @@ export function buildUnifiedProfile(provider: Provider): UnifiedProfile {
     canonical: { ...d.canonical, skills: [...d.canonical.skills], careerPath: [...d.canonical.careerPath] },
     networkReach: d.networkReach ? { ...d.networkReach } : null,
     contributions: [{ source: provider, ...d.contribution }],
+    analysisCategories: [d.canonical.jobCategory],
     completeness: d.baseCompleteness,
   }
 }
@@ -195,6 +197,7 @@ export function addSource(base: UnifiedProfile, provider: Provider): UnifiedProf
     },
     networkReach,
     contributions: [...base.contributions, { source: provider, ...d.contribution }],
+    analysisCategories: uniq([...base.analysisCategories, d.canonical.jobCategory]),
     completeness: Math.min(99, base.completeness + 7),
   }
 }
@@ -239,6 +242,8 @@ export function addManualSource(base: UnifiedProfile, input: ManualCareerInput):
       careerPath,
     },
     contributions,
+    // 분석은 밍글: 직접입력 직군을 앞세우되 기존 소스 직군도 유지
+    analysisCategories: uniq([input.jobCategory, ...base.analysisCategories]),
     completeness: Math.min(99, base.completeness + 8),
   }
 }
@@ -311,6 +316,7 @@ export function buildManualProfile(input: ManualCareerInput): UnifiedProfile {
         '다른 소스를 추가 연동하면 더 정확해져요',
       ].filter(Boolean),
     }],
+    analysisCategories: [input.jobCategory],
     completeness: Math.min(72, 40 + filled * 6),
   }
 }

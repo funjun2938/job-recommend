@@ -119,6 +119,7 @@ export async function buildProfileFromGitHub(token: string): Promise<UnifiedProf
         orgs.length ? `소속 조직 ${orgs.length}곳` : `팔로워 ${user.followers}명`,
       ],
     }],
+    analysisCategories: [jobCategory],
     completeness: Math.min(95, 55 + filled * 8),
   }
 }

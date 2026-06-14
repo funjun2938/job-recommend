@@ -29,10 +29,17 @@ export function NetworkSection({ stage1 }: Props) {
   async function runSync(silent = false) {
     setLoading(true)
     try {
+      // 다중 소스 직군을 섞어 분석하도록 저장된 통합 프로필의 분석 직군을 함께 전송
+      let categories: string[] = []
+      try {
+        const raw = sessionStorage.getItem('unifiedProfile')
+        if (raw) categories = (JSON.parse(raw)?.analysisCategories as string[]) ?? []
+      } catch { categories = [] }
+
       const res = await fetch('/api/network/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stage1 }),
+        body: JSON.stringify({ stage1, categories }),
       })
       if (!res.ok) throw new Error('sync_failed')
       const data = (await res.json()) as NetworkAnalysis

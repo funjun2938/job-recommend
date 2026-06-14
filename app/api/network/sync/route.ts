@@ -9,7 +9,7 @@ import { saveRecommendationScores } from '@/lib/supabase'
 import type { Stage1Data } from '@/lib/types'
 
 export async function POST(request: Request) {
-  const { stage1 } = (await request.json()) as { stage1: Stage1Data }
+  const { stage1, categories } = (await request.json()) as { stage1: Stage1Data; categories?: string[] }
 
   if (!stage1?.jobCategory) {
     return Response.json({ error: 'stage1 필요' }, { status: 400 })
@@ -18,7 +18,9 @@ export async function POST(request: Request) {
   // 실제 연동 지연 시뮬레이션
   await new Promise((r) => setTimeout(r, 600))
 
-  const analysis = buildNetworkAnalysis(stage1)
+  // 다중 소스 직군을 섞어(mingle) 분석 — 주 직군 외 소스 직군 추가
+  const extra = (categories ?? []).filter((c) => c && c !== stage1.jobCategory)
+  const analysis = buildNetworkAnalysis(stage1, extra)
 
   // 3축 추천 점수를 recommendation_scores 테이블에 적재 (Supabase 설정 시)
   saveRecommendationScores(analysis.scores, analysis.weights).catch(() => {})
