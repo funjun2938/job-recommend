@@ -18,7 +18,6 @@ import { ReadinessScore } from '@/components/result/ReadinessScore'
 import { ShareCard } from '@/components/result/ShareCard'
 import { CompanyInsightTeaser } from '@/components/result/CompanyInsightTeaser'
 import { NetworkSection } from '@/components/result/NetworkSection'
-import { ResumeBuilder } from '@/components/result/ResumeBuilder'
 import { loadPreferences } from '@/lib/preferences'
 import type { AnalysisResult, Stage1Data, Stage2Data, PreferenceData } from '@/lib/types'
 
@@ -252,13 +251,6 @@ export default function ResultPage() {
         <FadeIn delay={0.48}>
           <AlertSignup stage1={stage1} />
         </FadeIn>
-
-        {/* ⑭ 이력서 빌더 */}
-        {stage1 && result && (
-          <FadeIn delay={0.5}>
-            <ResumeBuilder stage1={stage1} stage2={stage2} result={result} />
-          </FadeIn>
-        )}
 
         {/* ⑮ 즐겨찾기 바로가기 */}
         <FadeIn delay={0.52}>
