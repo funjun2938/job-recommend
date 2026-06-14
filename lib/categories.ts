@@ -31,6 +31,7 @@ export interface CategoryDomain {
   trendingSkills: string[] // 6개
   recommendations: CategoryRec[] // 3개 (fitScore 내림차순, 90/78/65 식)
   networkCompanies: CategoryNetworkCompany[] // 8개 (name/industry/titles 2개)
+  subcategories: string[] // 대기업 기준 상세 하위 직군 (5~12개)
 }
 
 export const CATEGORIES: CategoryDomain[] = [
@@ -72,6 +73,20 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '라인', industry: '메신저', titles: ['플랫폼 엔지니어', '보안 엔지니어'] },
       { name: '무신사', industry: '패션 커머스', titles: ['백엔드 개발자', 'DevOps 엔지니어'] },
     ],
+    subcategories: [
+      '백엔드 개발',
+      '프론트엔드 개발',
+      '풀스택 개발',
+      '안드로이드 개발',
+      'iOS 개발',
+      '데브옵스/SRE',
+      '인프라/클라우드',
+      '보안 엔지니어',
+      'QA 엔지니어',
+      '임베디드/펌웨어',
+      '게임 클라이언트 개발',
+      '게임 서버 개발',
+    ],
   },
 
   // ── 2. 데이터·AI ──────────────────────────────────
@@ -111,6 +126,18 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: 'LG AI연구원', industry: 'AI 연구', titles: ['AI 리서처', '연구 엔지니어'] },
       { name: '삼성SDS', industry: 'IT 서비스', titles: ['데이터 엔지니어', 'AI 컨설턴트'] },
       { name: '스캐터랩', industry: 'AI', titles: ['NLP 엔지니어', 'ML 리서처'] },
+    ],
+    subcategories: [
+      '데이터 분석가',
+      '데이터 엔지니어',
+      '데이터 사이언티스트',
+      '머신러닝 엔지니어',
+      'AI 리서처',
+      'MLOps 엔지니어',
+      'BI/애널리틱스',
+      'NLP 엔지니어',
+      '컴퓨터비전 엔지니어',
+      '추천/검색 엔지니어',
     ],
   },
 
@@ -152,6 +179,17 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '야놀자', industry: '트래블테크', titles: ['PO', '플랫폼 기획'] },
       { name: '무신사', industry: '패션 커머스', titles: ['커머스 기획', 'PM'] },
     ],
+    subcategories: [
+      '서비스 기획',
+      '프로덕트 매니저(PM)',
+      '프로덕트 오너(PO)',
+      '프로그램 매니저',
+      '전략 기획',
+      '사업 기획',
+      '그로스 PM',
+      '플랫폼 기획',
+      '데이터 PM',
+    ],
   },
 
   // ── 4. 디자인·UX ──────────────────────────────────
@@ -191,6 +229,17 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '쿠팡', industry: '이커머스', titles: ['UX 디자이너', '프로덕트 디자이너'] },
       { name: '플러스엑스', industry: '디자인 에이전시', titles: ['브랜드 디자이너', 'BX 디자이너'] },
       { name: '제일기획', industry: '광고대행', titles: ['아트 디렉터', '디자인 컨설턴트'] },
+    ],
+    subcategories: [
+      'UX 디자이너',
+      'UI 디자이너',
+      '프로덕트 디자이너',
+      'BX/브랜드 디자이너',
+      '그래픽 디자이너',
+      '모션 디자이너',
+      'UX 리서처',
+      '비주얼 디자이너',
+      '디자인 시스템 디자이너',
     ],
   },
 
@@ -232,6 +281,18 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '이노션', industry: '광고대행', titles: ['AE', '디지털 플래너'] },
       { name: 'LG생활건강', industry: '뷰티/생활용품', titles: ['브랜드 매니저', '마케팅 전략'] },
     ],
+    subcategories: [
+      '퍼포먼스 마케팅',
+      '브랜드 마케팅',
+      '콘텐츠 마케팅',
+      'CRM 마케팅',
+      '그로스 마케팅',
+      '디지털 마케팅',
+      'PR/홍보',
+      '광고 AE',
+      '미디어 플래너',
+      '제품/상품 마케팅',
+    ],
   },
 
   // ── 6. 영업·BD ────────────────────────────────────
@@ -271,6 +332,17 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: 'AWS', industry: '클라우드', titles: ['Solutions Sales', '파트너 매니저'] },
       { name: 'HubSpot', industry: 'B2B SaaS', titles: ['Inbound Sales', 'Account Manager'] },
       { name: '야놀자', industry: '트래블테크', titles: ['제휴 BD', '파트너십 매니저'] },
+    ],
+    subcategories: [
+      '국내영업',
+      '해외영업',
+      '기술영업',
+      'B2B 세일즈',
+      '파트너십/제휴',
+      '영업관리',
+      '채널영업',
+      '솔루션 컨설팅',
+      '키 어카운트 매니저',
     ],
   },
 
@@ -312,6 +384,18 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '한국투자증권', industry: '증권', titles: ['PB', '리서치 애널리스트'] },
       { name: '신한카드', industry: '카드', titles: ['상품 기획', '리스크 관리'] },
     ],
+    subcategories: [
+      '재무',
+      '회계',
+      '세무',
+      'IR',
+      '자금',
+      '리스크관리',
+      '투자심사',
+      '애널리스트',
+      '여신/심사',
+      '내부감사',
+    ],
   },
 
   // ── 8. 인사·HR ────────────────────────────────────
@@ -351,6 +435,16 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: 'SK', industry: '지주/에너지', titles: ['인사 기획', '보상 담당'] },
       { name: '머서', industry: 'HR 컨설팅', titles: ['보상 컨설턴트', '조직 컨설턴트'] },
       { name: '커리어케어', industry: '서치펌', titles: ['헤드헌터', '리서처'] },
+    ],
+    subcategories: [
+      'HRM(인사운영)',
+      'HRD(교육)',
+      '채용(리크루터)',
+      '보상/평가',
+      '노무',
+      '조직문화',
+      'HRBP',
+      'HR 애널리틱스',
     ],
   },
 
@@ -392,6 +486,16 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: 'IMM인베스트먼트', industry: 'PE', titles: ['투자 심사역', '포트폴리오 매니저'] },
       { name: '현대자동차', industry: '모빌리티', titles: ['전략 기획', '신사업 개발'] },
     ],
+    subcategories: [
+      '경영전략',
+      '경영컨설팅',
+      '사업개발',
+      'M&A/투자',
+      'PMO',
+      '신사업 기획',
+      '포트폴리오 전략',
+      '딜 어드바이저리',
+    ],
   },
 
   // ── 10. 생산·제조 ─────────────────────────────────
@@ -431,6 +535,16 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '포스코퓨처엠', industry: '소재', titles: ['공정 개발', '생산기술'] },
       { name: 'LG디스플레이', industry: '디스플레이', titles: ['공정 엔지니어', '품질 관리'] },
       { name: '한화', industry: '중공업', titles: ['생산관리', '설비 엔지니어'] },
+    ],
+    subcategories: [
+      '생산관리',
+      '품질관리(QC/QA)',
+      '공정기술',
+      '설비/보전',
+      '생산기술',
+      '수율관리',
+      '안전/환경(EHS)',
+      '제조 자동화',
     ],
   },
 
@@ -472,6 +586,16 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: 'KIST', industry: '국책연구', titles: ['연구원', '박사후 연구원'] },
       { name: '한미약품', industry: '제약', titles: ['신약 연구원', '제제 연구원'] },
     ],
+    subcategories: [
+      '선행연구',
+      '제품개발(R&D)',
+      '소재연구',
+      '회로/하드웨어 설계',
+      '임상/제제 연구',
+      '신약 연구',
+      '시뮬레이션/해석',
+      '특허/IP 관리',
+    ],
   },
 
   // ── 12. 의료·보건 ─────────────────────────────────
@@ -511,6 +635,16 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '루닛', industry: '디지털 헬스', titles: ['임상 연구', '메디컬 어피어스'] },
       { name: '닥터나우', industry: '디지털 헬스', titles: ['헬스케어 운영', '메디컬 매니저'] },
       { name: '대웅제약', industry: '제약', titles: ['MR', '임상 담당'] },
+    ],
+    subcategories: [
+      '의사',
+      '간호사',
+      '약사',
+      '의료기사',
+      '보건관리',
+      '임상연구(CRA)',
+      '의료기기 인허가',
+      '디지털헬스 기획',
     ],
   },
 
@@ -552,6 +686,15 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '한국교육개발원', industry: '공공교육', titles: ['연구원', '교육 정책'] },
       { name: '윤선생', industry: '교육', titles: ['교육 운영', '커리큘럼 기획'] },
     ],
+    subcategories: [
+      '교사/강사',
+      '교육과정 기획',
+      '에듀테크 콘텐츠',
+      '입시/진학 컨설팅',
+      'LMS 운영',
+      '학습 데이터 분석',
+      '교육 운영',
+    ],
   },
 
   // ── 14. 법무 ──────────────────────────────────────
@@ -591,6 +734,16 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '네이버', industry: 'IT 플랫폼', titles: ['사내변호사', '개인정보보호 담당'] },
       { name: '로앤컴퍼니', industry: '리걸테크', titles: ['법무 담당', '리걸 오퍼레이션'] },
       { name: '세종', industry: '로펌', titles: ['변호사', 'M&A 자문'] },
+    ],
+    subcategories: [
+      '사내변호사',
+      '송무',
+      '자문',
+      '컴플라이언스',
+      '특허/IP',
+      '계약관리',
+      '개인정보보호',
+      '리걸 오퍼레이션',
     ],
   },
 
@@ -632,6 +785,15 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: 'JTBC', industry: '방송', titles: ['PD', '편성 기획'] },
       { name: '왓챠', industry: 'OTT', titles: ['콘텐츠 기획', '큐레이션'] },
     ],
+    subcategories: [
+      '콘텐츠 기획',
+      '영상 편집/PD',
+      '작가/에디터',
+      '채널 운영',
+      '사운드/음악',
+      'IP 사업/기획',
+      '소셜/커뮤니티 운영',
+    ],
   },
 
   // ── 16. 고객·CS ───────────────────────────────────
@@ -671,6 +833,15 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '현대카드', industry: '카드', titles: ['고객 관리', 'CS 기획'] },
       { name: '무신사', industry: '패션 커머스', titles: ['CS 운영', 'VOC 담당'] },
       { name: 'SK텔레콤', industry: '통신', titles: ['고객 관리', '컨택센터 운영'] },
+    ],
+    subcategories: [
+      'CS 상담',
+      'CX 기획',
+      'VOC 관리',
+      '운영(오퍼레이션)',
+      '커뮤니티 매니저',
+      'CS 운영관리',
+      '컨택센터 운영',
     ],
   },
 
@@ -712,6 +883,15 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: 'DHL', industry: '글로벌 물류', titles: ['포워딩 매니저', '물류 운영'] },
       { name: '판토스', industry: '물류', titles: ['국제물류 기획', 'SCM 운영'] },
     ],
+    subcategories: [
+      '물류관리',
+      '구매/소싱',
+      '무역/통관',
+      '재고/창고관리',
+      '수요예측(SCM 플래닝)',
+      '풀필먼트 운영',
+      '운송/포워딩',
+    ],
   },
 
   // ── 18. 건설·부동산 ───────────────────────────────
@@ -751,6 +931,16 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: 'SK디앤디', industry: '디벨로퍼', titles: ['개발 사업', 'PF 금융'] },
       { name: '이지스자산운용', industry: '부동산 자산운용', titles: ['투자 심사', '자산 관리'] },
       { name: '직방', industry: '프롭테크', titles: ['부동산 데이터', '서비스 기획'] },
+    ],
+    subcategories: [
+      '건축설계',
+      '시공/현장관리',
+      '구조/설비 엔지니어',
+      '부동산 개발',
+      '감리',
+      '견적/적산',
+      '안전관리',
+      '부동산 자산운용',
     ],
   },
 
@@ -792,41 +982,89 @@ export const CATEGORIES: CategoryDomain[] = [
       { name: '쿠팡', industry: '이커머스', titles: ['오퍼레이션 매니저', '프로그램 매니저'] },
       { name: '신세계', industry: '유통', titles: ['사업 기획', '운영 관리'] },
     ],
+    subcategories: [
+      '일반사무',
+      '총무',
+      '비서',
+      '운영지원',
+      '경영지원',
+      '사무행정',
+    ],
   },
 ]
 
 export const CATEGORY_OPTIONS: string[] = CATEGORIES.map((c) => c.label)
 
 /**
+ * 대분류 직군 그룹 (상세 하위 직군 포함).
+ * 셀렉트/그룹 UI에서 대분류 → 상세 직군 선택 흐름에 사용한다.
+ */
+export interface CategoryGroup {
+  key: string
+  label: string
+  emoji: string
+  subs: string[]
+}
+
+export const CATEGORY_GROUPS: CategoryGroup[] = CATEGORIES.map((c) => ({
+  key: c.key,
+  label: c.label,
+  emoji: c.emoji,
+  subs: c.subcategories,
+}))
+
+/** 모든 상세 하위 직군을 평탄화(중복 제거)한 옵션 목록. */
+export const SUBCATEGORY_OPTIONS: string[] = Array.from(
+  new Set(CATEGORIES.flatMap((c) => c.subcategories))
+)
+
+/**
  * 입력된 직군 문자열에 대응하는 도메인을 찾는다.
- * - 정확 일치 우선
- * - label에 입력이 포함되거나, 입력이 label을 포함하면 부분 매칭
- * - 못 찾으면 '기타' 기본값(없으면 첫 항목) 반환
+ * - 1) 대분류 label 정확 일치 우선
+ * - 2) 상세 하위 직군(subcategories) 정확 일치 → 부모 도메인 반환
+ * - 3) label 부분 매칭(양방향 포함)
+ * - 4) subcategory 부분 매칭(양방향 포함) → 부모 도메인 반환
+ * - 5) 구분자(·, /, 공백) 토큰 단위 매칭
+ * - 6) 못 찾으면 '기타' 기본값(없으면 첫 항목) 반환
  */
 export function getCategory(jobCategory: string): CategoryDomain {
   const input = (jobCategory ?? '').trim()
 
   if (input) {
-    // 1) 정확 일치
+    // 1) 대분류 label 정확 일치
     const exact = CATEGORIES.find((c) => c.label === input)
     if (exact) return exact
 
-    // 2) 부분 매칭 (양방향 포함)
+    // 2) 상세 하위 직군 정확 일치 → 부모 도메인
+    const exactSub = CATEGORIES.find((c) => c.subcategories.includes(input))
+    if (exactSub) return exactSub
+
+    // 3) label 부분 매칭 (양방향 포함)
     const partial = CATEGORIES.find(
       (c) => c.label.includes(input) || input.includes(c.label)
     )
     if (partial) return partial
 
-    // 3) 구분자(·, /, 공백) 토큰 단위 매칭
+    // 4) subcategory 부분 매칭 (양방향 포함) → 부모 도메인
+    const partialSub = CATEGORIES.find((c) =>
+      c.subcategories.some(
+        (s) => s.includes(input) || input.includes(s)
+      )
+    )
+    if (partialSub) return partialSub
+
+    // 5) 구분자(·, /, 공백) 토큰 단위 매칭 (label + subcategory)
     const tokens = input.split(/[·/,\s]+/).filter(Boolean)
     if (tokens.length > 0) {
-      const token = CATEGORIES.find((c) =>
-        tokens.some((t) => c.label.includes(t))
+      const token = CATEGORIES.find(
+        (c) =>
+          tokens.some((t) => c.label.includes(t)) ||
+          tokens.some((t) => c.subcategories.some((s) => s.includes(t)))
       )
       if (token) return token
     }
   }
 
-  // 4) 폴백: '기타' → 없으면 첫 항목
+  // 6) 폴백: '기타' → 없으면 첫 항목
   return CATEGORIES.find((c) => c.label === '기타') ?? CATEGORIES[0]
 }

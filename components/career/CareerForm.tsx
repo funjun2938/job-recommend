@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, ArrowRight, X, Loader2 } from 'lucide-react'
-import { CATEGORY_OPTIONS } from '@/lib/categories'
+import { CATEGORY_GROUPS } from '@/lib/categories'
 import { buildManualProfile, toStage1, type ManualCareerInput } from '@/lib/connect'
 import { buildSync, setStoredSync } from '@/lib/network'
 
@@ -14,6 +14,7 @@ const SALARY = ['3천만원 미만', '3~4천만원', '4~5천만원', '5~6천만�
 
 export function CareerForm() {
   const router = useRouter()
+  const [groupKey, setGroupKey] = useState('')
   const [jobCategory, setJobCategory] = useState('')
   const [experienceYears, setExp] = useState('')
   const [companySize, setSize] = useState('')
@@ -72,15 +73,32 @@ export function CareerForm() {
       <div className="flex-1 px-5 py-5 space-y-6">
         <p className="text-sm text-gray-500">간단히 입력하면 바로 추천을 받을 수 있어요. 나중에 계정 연동으로 더 보강할 수 있어요.</p>
 
-        {/* 직군 */}
+        {/* 직군 — 1단계: 대분류 */}
         <div>
-          <label className="block text-sm font-bold text-gray-900 mb-2">직군 <span className="text-indigo-500">*</span></label>
+          <label className="block text-sm font-bold text-gray-900 mb-2">직군 대분류 <span className="text-indigo-500">*</span></label>
           <div className="grid grid-cols-2 gap-2">
-            {CATEGORY_OPTIONS.map((c) => (
-              <Chip key={c} value={c} selected={jobCategory === c} onClick={() => setJobCategory(c)} />
+            {CATEGORY_GROUPS.map((g) => (
+              <Chip
+                key={g.key}
+                value={`${g.emoji} ${g.label}`}
+                selected={groupKey === g.key}
+                onClick={() => { setGroupKey(g.key); setJobCategory('') }}
+              />
             ))}
           </div>
         </div>
+
+        {/* 직군 — 2단계: 상세 직군 */}
+        {groupKey && (
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-2">상세 직군 <span className="text-indigo-500">*</span></label>
+            <div className="flex flex-wrap gap-2">
+              {(CATEGORY_GROUPS.find((g) => g.key === groupKey)?.subs ?? []).map((s) => (
+                <Chip key={s} value={s} selected={jobCategory === s} onClick={() => setJobCategory(s)} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 경력 */}
         <div>
