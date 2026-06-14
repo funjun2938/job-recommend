@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   CheckCircle2, ArrowRight, Users, GitBranch,
-  Briefcase, Plus, Loader2,
+  Briefcase, Plus, Loader2, Pencil,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -90,6 +90,7 @@ export function ConnectedProfile() {
 
   const c = profile.canonical
   const remaining = PROVIDERS.filter((p) => !profile.sources.includes(p.key))
+  const canManual = !profile.sources.includes('manual')
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
@@ -120,13 +121,29 @@ export function ConnectedProfile() {
 
       <div className="px-5 py-5 space-y-4">
         {/* 추가 연동 — 데이터 보강 */}
-        {remaining.length > 0 && (
+        {(remaining.length > 0 || canManual) && (
           <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-4">
             <p className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
               <Plus size={14} className="text-indigo-600" /> 데이터 더 보강하기
             </p>
-            <p className="text-[11px] text-gray-500 mt-0.5">소스마다 가진 정보가 달라요. 추가 연동하면 추천이 더 정확해져요.</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">소스마다 가진 정보가 달라요. 추가 연동하거나 직접 입력하면 추천이 더 정확해져요.</p>
             <div className="grid grid-cols-1 gap-2 mt-3">
+              {/* 직접 입력으로 보강 — 연동과 동일 레벨 */}
+              {canManual && (
+                <Link
+                  href="/career?mode=add"
+                  className="flex items-center gap-3 bg-white rounded-xl p-3 border border-gray-100 active:scale-[0.99] transition"
+                >
+                  <span className="w-9 h-9 rounded-lg flex items-center justify-center text-white flex-shrink-0" style={{ background: '#475569' }}>
+                    <Pencil size={16} />
+                  </span>
+                  <span className="flex-1 text-left">
+                    <span className="block text-sm font-bold text-gray-900">직접 입력으로 보강</span>
+                    <span className="block text-[11px] text-gray-400">희망연봉·회사·스킬을 직접 추가</span>
+                  </span>
+                  <Plus size={16} className="text-indigo-400" />
+                </Link>
+              )}
               {remaining.map((p) => {
                 const isAdding = adding === p.key
                 return (

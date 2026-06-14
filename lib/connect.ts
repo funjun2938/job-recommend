@@ -199,6 +199,39 @@ export function addSource(base: UnifiedProfile, provider: Provider): UnifiedProf
   }
 }
 
+/**
+ * 직접 입력으로 기존 프로필을 보강 (연동과 동일 레벨의 '추가 소스').
+ * 핵심 정체성은 유지하고 스킬·커리어 경로를 누적, 직접입력 기여를 추가한다.
+ */
+export function addManualSource(base: UnifiedProfile, input: ManualCareerInput): UnifiedProfile {
+  const skills = uniq([...base.canonical.skills, ...input.skills.filter(Boolean)])
+  const careerPath = uniq([
+    ...base.canonical.careerPath,
+    ...(input.currentCompany.trim() ? [`${input.currentCompany.trim()} (입력)`] : []),
+  ])
+  const sources: Source[] = base.sources.includes('manual') ? base.sources : [...base.sources, 'manual']
+
+  const highlights: string[] = []
+  if (input.jobCategory) highlights.push(`직군 보강: ${input.jobCategory}`)
+  if (input.skills.filter(Boolean).length) highlights.push(`스킬 추가: ${input.skills.filter(Boolean).slice(0, 3).join(', ')}`)
+  if (input.currentCompany.trim()) highlights.push(`현재 회사: ${input.currentCompany.trim()}`)
+  if (input.salaryRange) highlights.push(`연봉대: ${input.salaryRange}`)
+
+  // 직접입력 기여는 항상 1개만 유지 (재입력 시 갱신)
+  const contributions = base.contributions
+    .filter((c) => c.source !== 'manual')
+    .concat({ source: 'manual', summary: '직접 입력으로 보강했어요', highlights })
+
+  return {
+    ...base,
+    sources,
+    displayName: `${sources.length}개 소스 연동 프로필`,
+    canonical: { ...base.canonical, skills, careerPath },
+    contributions,
+    completeness: Math.min(99, base.completeness + 7),
+  }
+}
+
 /** 통합 프로필 → 분석 입력(Stage1) 투영 */
 export function toStage1(profile: UnifiedProfile): Stage1Data {
   return {

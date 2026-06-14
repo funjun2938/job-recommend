@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, ArrowRight, X, Loader2 } from 'lucide-react'
 import { CATEGORY_GROUPS } from '@/lib/categories'
-import { buildManualProfile, toStage1, type ManualCareerInput } from '@/lib/connect'
+import { buildManualProfile, addManualSource, toStage1, type ManualCareerInput, type UnifiedProfile } from '@/lib/connect'
 import { buildSync, setStoredSync } from '@/lib/network'
 
 const EXPERIENCE = ['신입', '1년 미만', '1~3년', '3~5년', '5~7년', '7~10년', '10년 이상']
@@ -14,6 +14,12 @@ const SALARY = ['3천만원 미만', '3~4천만원', '4~5천만원', '5~6천만�
 
 export function CareerForm() {
   const router = useRouter()
+  // 기존 프로필이 있으면 '보강' 모드 (연동 후 직접입력 추가)
+  const [addMode] = useState(
+    () => typeof window !== 'undefined'
+      && new URLSearchParams(window.location.search).get('mode') === 'add'
+      && !!sessionStorage.getItem('unifiedProfile')
+  )
   const [groupKey, setGroupKey] = useState('')
   const [jobCategory, setJobCategory] = useState('')
   const [experienceYears, setExp] = useState('')
@@ -36,6 +42,27 @@ export function CareerForm() {
     if (!valid || submitting) return
     setSubmitting(true)
     const input: ManualCareerInput = { jobCategory, experienceYears, companySize, salaryRange, currentCompany, skills }
+
+    // 보강 모드: 기존 프로필에 직접입력 소스를 병합
+    if (addMode) {
+      const raw = sessionStorage.getItem('unifiedProfile')
+      if (raw) {
+        try {
+          const base = JSON.parse(raw) as UnifiedProfile
+          const merged = addManualSource(base, input)
+          const s1 = toStage1(merged)
+          setStoredSync(buildSync(s1))
+          sessionStorage.setItem('unifiedProfile', JSON.stringify(merged))
+          sessionStorage.setItem('stage1Data', JSON.stringify(s1))
+          sessionStorage.setItem('connectedProvider', merged.sources.join(','))
+          await new Promise((r) => setTimeout(r, 400))
+          router.push('/connected')
+          return
+        } catch { /* 폴백: 새 프로필 */ }
+      }
+    }
+
+    // 신규: 직접입력으로 새 프로필 생성
     const profile = buildManualProfile(input)
     const stage1 = toStage1(profile)
     setStoredSync(buildSync(stage1))
@@ -65,13 +92,17 @@ export function CareerForm() {
       {/* 헤더 */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
         <div className="flex items-center gap-3 px-4 h-14">
-          <Link href="/" className="p-1 -ml-1 text-gray-400"><ChevronLeft size={22} /></Link>
-          <span className="font-bold text-gray-900 text-sm">커리어 직접 입력</span>
+          <Link href={addMode ? '/connected' : '/'} className="p-1 -ml-1 text-gray-400"><ChevronLeft size={22} /></Link>
+          <span className="font-bold text-gray-900 text-sm">{addMode ? '직접 입력으로 보강' : '커리어 직접 입력'}</span>
         </div>
       </div>
 
       <div className="flex-1 px-5 py-5 space-y-6">
-        <p className="text-sm text-gray-500">간단히 입력하면 바로 추천을 받을 수 있어요. 나중에 계정 연동으로 더 보강할 수 있어요.</p>
+        <p className="text-sm text-gray-500">
+          {addMode
+            ? '입력한 내용은 기존 연동 프로필에 더해져 추천이 더 정확해져요.'
+            : '간단히 입력하면 바로 추천을 받을 수 있어요. 나중에 계정 연동으로 더 보강할 수 있어요.'}
+        </p>
 
         {/* 직군 — 1단계: 대분류 */}
         <div>
@@ -175,7 +206,9 @@ export function CareerForm() {
             disabled={!valid || submitting}
             className="flex items-center justify-center gap-2 w-full py-3.5 bg-indigo-600 active:bg-indigo-800 disabled:bg-gray-200 disabled:text-gray-400 text-white font-black text-sm rounded-2xl"
           >
-            {submitting ? <><Loader2 size={17} className="animate-spin" /> 분석 준비 중…</> : <>분석 결과 보기 <ArrowRight size={17} /></>}
+            {submitting
+              ? <><Loader2 size={17} className="animate-spin" /> {addMode ? '보강 중…' : '분석 준비 중…'}</>
+              : <>{addMode ? '이 내용으로 보강하기' : '분석 결과 보기'} <ArrowRight size={17} /></>}
           </button>
         </div>
       </div>
