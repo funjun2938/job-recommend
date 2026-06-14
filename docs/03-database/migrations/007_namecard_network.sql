@@ -265,8 +265,9 @@ $$;
 
 -- ────────────────────────────────────────────────────
 -- 9. recommendation_scores
---    3개 축(서베이 적합도 × 네트워크 근접도 × 커리어 경로 유사도)을
---    가중 합산한 최종 추천 점수 영속화. 추천 재현/AB 테스트/튜닝에 활용.
+--    4-신호 하이브리드(Hybrid v3) 최종 추천 점수 영속화.
+--    Hybrid v3 = 0.40×CBF + 0.30×CF + 0.20×Graph + 0.10×Network
+--    추천 재현 / A·B 테스트 / 가중치 튜닝에 활용.
 -- ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS recommendation_scores (
   id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -274,17 +275,19 @@ CREATE TABLE IF NOT EXISTS recommendation_scores (
   user_id             UUID        REFERENCES user_profiles(id) ON DELETE CASCADE,
   company_name        TEXT        NOT NULL,                    -- 추천 대상 회사
 
-  -- 3개 축 원점수 (0~1 정규화)
-  survey_fit          DECIMAL(4,3) NOT NULL DEFAULT 0,         -- 서베이 적합도
-  network_proximity   DECIMAL(4,3) NOT NULL DEFAULT 0,         -- 네트워크 근접도
-  career_similarity   DECIMAL(4,3) NOT NULL DEFAULT 0,         -- 커리어 경로 유사도
+  -- 4개 신호 원점수 (0~1 정규화)
+  cbf_score           DECIMAL(4,3) NOT NULL DEFAULT 0,         -- 콘텐츠 적합도(CBF→LTR)
+  cf_score            DECIMAL(4,3) NOT NULL DEFAULT 0,         -- 협업 필터링
+  graph_score         DECIMAL(4,3) NOT NULL DEFAULT 0,         -- 커리어 전이 경로
+  network_score       DECIMAL(4,3) NOT NULL DEFAULT 0,         -- 사회적 연결(명함첩)
 
-  -- 가중치 (합 = 1.0 권장)
-  weight_survey       DECIMAL(4,3) NOT NULL DEFAULT 0.50,
-  weight_network      DECIMAL(4,3) NOT NULL DEFAULT 0.25,
-  weight_career       DECIMAL(4,3) NOT NULL DEFAULT 0.25,
+  -- 가중치 (합 = 1.0 권장, Hybrid v3 기본값)
+  weight_cbf          DECIMAL(4,3) NOT NULL DEFAULT 0.40,
+  weight_cf           DECIMAL(4,3) NOT NULL DEFAULT 0.30,
+  weight_graph        DECIMAL(4,3) NOT NULL DEFAULT 0.20,
+  weight_network      DECIMAL(4,3) NOT NULL DEFAULT 0.10,
 
-  final_score         DECIMAL(5,4) NOT NULL DEFAULT 0,         -- 가중 합산 결과
+  final_score         DECIMAL(5,4) NOT NULL DEFAULT 0,         -- 하이브리드 가중 합산
   calculated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -292,14 +295,15 @@ CREATE INDEX idx_recscore_user    ON recommendation_scores (user_id);
 CREATE INDEX idx_recscore_company ON recommendation_scores (company_name);
 CREATE INDEX idx_recscore_final   ON recommendation_scores (final_score DESC);
 
--- 최종 점수 자동 계산 (가중 합산)
+-- 최종 점수 자동 계산 (Hybrid v3 가중 합산)
 CREATE OR REPLACE FUNCTION compute_final_score()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW.final_score :=
-      NEW.survey_fit        * NEW.weight_survey
-    + NEW.network_proximity * NEW.weight_network
-    + NEW.career_similarity * NEW.weight_career;
+      NEW.cbf_score     * NEW.weight_cbf
+    + NEW.cf_score      * NEW.weight_cf
+    + NEW.graph_score   * NEW.weight_graph
+    + NEW.network_score * NEW.weight_network;
   NEW.calculated_at := NOW();
   RETURN NEW;
 END;

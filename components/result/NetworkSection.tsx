@@ -137,12 +137,13 @@ export function NetworkSection({ stage1 }: Props) {
         <div className="flex items-center gap-2">
           <Trophy size={18} className="text-amber-500" />
           <h2 className="font-semibold text-gray-900">통합 추천 점수</h2>
-          <span className="ml-auto text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">3축 종합</span>
+          <span className="ml-auto text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Hybrid v3</span>
         </div>
 
         <p className="text-xs text-gray-500 -mt-1 leading-relaxed">
-          서베이 적합도({Math.round(weights.survey * 100)}%) · 네트워크 근접도({Math.round(weights.network * 100)}%) · 커리어 경로({Math.round(weights.career * 100)}%)를 가중 합산한 최종 추천 순위예요.
+          콘텐츠 적합도(CBF {Math.round(weights.cbf * 100)}%) · 협업필터링(CF {Math.round(weights.cf * 100)}%) · 커리어 전이(Graph {Math.round(weights.graph * 100)}%) · 인맥(Network {Math.round(weights.network * 100)}%) 4개 신호를 하이브리드 랭킹한 결과예요.
         </p>
+        <p className="text-[10px] text-gray-400 -mt-2">후보생성 → 다신호 점수화 → 하이브리드 랭킹 → 피드백 루프</p>
 
         <div className="space-y-2.5">
           {scores.slice(0, 5).map((s, i) => (
@@ -159,12 +160,13 @@ export function NetworkSection({ stage1 }: Props) {
                   <span className="text-[10px] text-gray-400 ml-0.5">점</span>
                 </div>
               </div>
-              {/* 3축 미니 막대 */}
-              <div className="grid grid-cols-3 gap-2">
+              {/* 4-신호 미니 막대 */}
+              <div className="grid grid-cols-4 gap-2">
                 {[
-                  { label: '서베이', val: s.surveyFit, color: 'bg-indigo-400' },
-                  { label: '네트워크', val: s.networkProximity, color: 'bg-violet-400' },
-                  { label: '경로', val: s.careerSimilarity, color: 'bg-amber-400' },
+                  { label: 'CBF', val: s.cbf, color: 'bg-indigo-400' },
+                  { label: 'CF', val: s.cf, color: 'bg-blue-400' },
+                  { label: 'Graph', val: s.graph, color: 'bg-amber-400' },
+                  { label: 'Net', val: s.network, color: 'bg-violet-400' },
                 ].map((axis) => (
                   <div key={axis.label}>
                     <div className="flex items-center justify-between mb-0.5">
@@ -182,7 +184,7 @@ export function NetworkSection({ stage1 }: Props) {
         </div>
 
         <p className="text-[11px] text-gray-400">
-          * final = 서베이×{weights.survey} + 네트워크×{weights.network} + 경로×{weights.career} (recommendation_scores)
+          * final = CBF×{weights.cbf} + CF×{weights.cf} + Graph×{weights.graph} + Network×{weights.network} (Hybrid v3 · recommendation_scores)
         </p>
       </div>
 

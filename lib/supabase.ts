@@ -41,7 +41,7 @@ export async function saveAlertSubscription(
   })
 }
 
-/** 3축 추천 점수를 recommendation_scores 테이블에 적재 (명함첩 연동 시) */
+/** 4-신호 하이브리드 추천 점수(Hybrid v3)를 recommendation_scores 테이블에 적재 */
 export async function saveRecommendationScores(
   scores: RecommendationScore[],
   weights: ScoreWeights,
@@ -52,12 +52,14 @@ export async function saveRecommendationScores(
     scores.map((s) => ({
       user_id: userId,
       company_name: s.company,
-      survey_fit: s.surveyFit,
-      network_proximity: s.networkProximity,
-      career_similarity: s.careerSimilarity,
-      weight_survey: weights.survey,
+      cbf_score: s.cbf,
+      cf_score: s.cf,
+      graph_score: s.graph,
+      network_score: s.network,
+      weight_cbf: weights.cbf,
+      weight_cf: weights.cf,
+      weight_graph: weights.graph,
       weight_network: weights.network,
-      weight_career: weights.career,
       final_score: s.finalScore,
     }))
   )

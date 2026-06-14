@@ -100,22 +100,29 @@ export interface CareerPathInsight {
 }
 
 /**
- * 3축 가중 합산 추천 점수 (recommendation_scores 테이블 대응)
- * final = surveyFit·w_survey + networkProximity·w_network + careerSimilarity·w_career
+ * 4-신호 하이브리드 추천 점수 (Hybrid v3)
+ * 후보생성 → 다신호 점수화 → 하이브리드 랭킹 파이프라인의 점수 레이어.
+ * final = cbf·w_cbf + cf·w_cf + graph·w_graph + network·w_network
+ *   - cbf:     콘텐츠 적합도(스킬·연봉·경력·근무형태) → LTR 주요 입력
+ *   - cf:      협업 필터링(유사 행동 유저의 선택)
+ *   - graph:   커리어 전이 경로 유사도
+ *   - network: 사회적 연결(명함첩 인맥) 신호
  */
 export interface RecommendationScore {
   company: string
-  surveyFit: number          // 0~1 서베이 적합도
-  networkProximity: number   // 0~1 네트워크 근접도
-  careerSimilarity: number   // 0~1 커리어 경로 유사도
-  finalScore: number         // 0~1 가중 합산
+  cbf: number          // 0~1 콘텐츠 적합도
+  cf: number           // 0~1 협업 필터링
+  graph: number        // 0~1 커리어 전이 경로
+  network: number      // 0~1 사회적 연결
+  finalScore: number   // 0~1 하이브리드 가중 합산
 }
 
-/** 추천 점수 산출에 쓰인 가중치 */
+/** 추천 점수 산출에 쓰인 가중치 (Hybrid v3) */
 export interface ScoreWeights {
-  survey: number
+  cbf: number
+  cf: number
+  graph: number
   network: number
-  career: number
 }
 
 /** 두 자산을 묶은 명함첩 연동 결과 */

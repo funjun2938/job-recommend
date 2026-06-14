@@ -322,18 +322,21 @@ CREATE TABLE IF NOT EXISTS career_paths (
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 14. recommendation_scores — 3축 가중 합산 최종 추천 점수 영속화
+-- 14. recommendation_scores — 4-신호 하이브리드(Hybrid v3) 최종 추천 점수 영속화
+--     Hybrid v3 = 0.40×CBF + 0.30×CF + 0.20×Graph + 0.10×Network
 CREATE TABLE IF NOT EXISTS recommendation_scores (
   id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   user_id           UUID         REFERENCES user_profiles(id) ON DELETE CASCADE,
   company_name      TEXT         NOT NULL,
-  survey_fit        DECIMAL(4,3) NOT NULL DEFAULT 0,   -- 서베이 적합도 0~1
-  network_proximity DECIMAL(4,3) NOT NULL DEFAULT 0,   -- 네트워크 근접도 0~1
-  career_similarity DECIMAL(4,3) NOT NULL DEFAULT 0,   -- 커리어 경로 유사도 0~1
-  weight_survey     DECIMAL(4,3) NOT NULL DEFAULT 0.50,
-  weight_network    DECIMAL(4,3) NOT NULL DEFAULT 0.25,
-  weight_career     DECIMAL(4,3) NOT NULL DEFAULT 0.25,
-  final_score       DECIMAL(5,4) NOT NULL DEFAULT 0,   -- 가중 합산 결과
+  cbf_score         DECIMAL(4,3) NOT NULL DEFAULT 0,   -- 콘텐츠 적합도(CBF→LTR) 0~1
+  cf_score          DECIMAL(4,3) NOT NULL DEFAULT 0,   -- 협업 필터링 0~1
+  graph_score       DECIMAL(4,3) NOT NULL DEFAULT 0,   -- 커리어 전이 경로 0~1
+  network_score     DECIMAL(4,3) NOT NULL DEFAULT 0,   -- 사회적 연결 0~1
+  weight_cbf        DECIMAL(4,3) NOT NULL DEFAULT 0.40,
+  weight_cf         DECIMAL(4,3) NOT NULL DEFAULT 0.30,
+  weight_graph      DECIMAL(4,3) NOT NULL DEFAULT 0.20,
+  weight_network    DECIMAL(4,3) NOT NULL DEFAULT 0.10,
+  final_score       DECIMAL(5,4) NOT NULL DEFAULT 0,   -- 하이브리드 가중 합산
   calculated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );

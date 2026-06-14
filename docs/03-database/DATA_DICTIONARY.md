@@ -163,24 +163,27 @@
 | seniority_seq | TEXT[] | DEFAULT '{}' | 직급 시퀀스 |
 | total_moves | SMALLINT | DEFAULT 0 | 이직 횟수 |
 
-## recommendation_scores
+## recommendation_scores (4-신호 Hybrid v3)
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |------|------|------|------|
 | id | UUID | PK | 자동 생성 |
 | user_id | UUID | FK→user_profiles | 추천 대상 사용자 |
 | company_name | TEXT | NOT NULL | 추천 회사 |
-| survey_fit | DECIMAL(4,3) | 0~1 | 축①: 서베이 적합도 |
-| network_proximity | DECIMAL(4,3) | 0~1 | 축②: 네트워크 근접도 |
-| career_similarity | DECIMAL(4,3) | 0~1 | 축③: 커리어 경로 유사도 |
-| weight_survey | DECIMAL(4,3) | DEFAULT 0.50 | 서베이 가중치 |
-| weight_network | DECIMAL(4,3) | DEFAULT 0.25 | 네트워크 가중치 |
-| weight_career | DECIMAL(4,3) | DEFAULT 0.25 | 커리어 가중치 |
-| final_score | DECIMAL(5,4) | 트리거 계산 | 가중 합산 최종 점수 |
+| cbf_score | DECIMAL(4,3) | 0~1 | 신호①: 콘텐츠 적합도(CBF→LTR) |
+| cf_score | DECIMAL(4,3) | 0~1 | 신호②: 협업 필터링 |
+| graph_score | DECIMAL(4,3) | 0~1 | 신호③: 커리어 전이 경로 |
+| network_score | DECIMAL(4,3) | 0~1 | 신호④: 사회적 연결(명함첩) |
+| weight_cbf | DECIMAL(4,3) | DEFAULT 0.40 | CBF 가중치 |
+| weight_cf | DECIMAL(4,3) | DEFAULT 0.30 | CF 가중치 |
+| weight_graph | DECIMAL(4,3) | DEFAULT 0.20 | Graph 가중치 |
+| weight_network | DECIMAL(4,3) | DEFAULT 0.10 | Network 가중치 |
+| final_score | DECIMAL(5,4) | 트리거 계산 | 하이브리드 최종 점수 |
 | calculated_at | TIMESTAMPTZ | NOT NULL | 계산 시각 |
 
-> `final_score = survey_fit·w_survey + network_proximity·w_network + career_similarity·w_career`
+> `final_score = cbf·0.40 + cf·0.30 + graph·0.20 + network·0.10` (Hybrid v3)
 > (BEFORE INSERT/UPDATE 트리거 `compute_final_score()` 가 자동 계산)
+> 파이프라인: 후보생성 → 다신호 점수화(CBF·CF·Graph·Network) → 하이브리드 랭킹(LTR) → 피드백 루프
 
 ---
 

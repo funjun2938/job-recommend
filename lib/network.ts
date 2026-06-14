@@ -22,8 +22,9 @@ import type {
 } from './types'
 import { getCategory } from './categories'
 
-// 3축 추천 점수 기본 가중치 (recommendation_scores 테이블 기본값과 일치)
-export const SCORE_WEIGHTS: ScoreWeights = { survey: 0.5, network: 0.25, career: 0.25 }
+// 4-신호 하이브리드 가중치 (Hybrid v3)
+// Hybrid v3 = 0.40×CBF(콘텐츠/LTR) + 0.30×CF(협업) + 0.20×Graph(커리어전이) + 0.10×Network(소셜)
+export const SCORE_WEIGHTS: ScoreWeights = { cbf: 0.4, cf: 0.3, graph: 0.2, network: 0.1 }
 
 // 직군 도메인 카탈로그(lib/categories.ts)에서 직군별 네트워크 회사 풀을 가져온다.
 // 전(全) 직군에서 직군 맥락에 맞는 명함첩 네트워크 맵/커리어 경로가 생성된다.
@@ -159,9 +160,15 @@ export function buildSync(stage1: Stage1Data): NamecardSync {
   }
 }
 
+const r3 = (n: number) => Math.round(n * 1000) / 1000
+
 /**
- * 3축 가중 합산 추천 점수 산출 (recommendation_scores 테이블 대응)
- * 서베이 적합도 × 네트워크 근접도 × 커리어 경로 유사도를 회사별로 결합.
+ * 4-신호 하이브리드 추천 점수 산출 (Hybrid v3)
+ * 후보생성(네트워크 ∪ 커리어 경로) → 다신호 점수화 → 하이브리드 랭킹.
+ *   - CBF:     콘텐츠 적합도(스킬·연봉·경력·근무형태) → LTR 주요 입력
+ *   - CF:      협업 필터링(유사 행동 유저의 선택) — 가장 큰 기여 신호
+ *   - Graph:   커리어 전이 경로 유사도
+ *   - Network: 명함첩 기반 사회적 연결 신호
  */
 export function buildRecommendationScores(
   stage1: Stage1Data,
@@ -169,34 +176,26 @@ export function buildRecommendationScores(
   careerPath: CareerPathInsight,
   weights: ScoreWeights = SCORE_WEIGHTS
 ): RecommendationScore[] {
-  const rand = seededRand(seedFrom('score' + stage1.jobCategory + stage1.experienceYears))
-
-  // 네트워크 / 커리어 점수를 회사명 기준으로 인덱싱
+  // Network 신호 = 명함첩 근접도, Graph 신호 = 커리어 경로 일치율
   const netByCompany = new Map<string, number>()
   networkMap.companies.forEach((c) => netByCompany.set(c.company, c.proximity / 100))
+  const graphByCompany = new Map<string, number>()
+  careerPath.recommendations.forEach((r) => graphByCompany.set(r.company, r.matchRate / 100))
 
-  const careerByCompany = new Map<string, number>()
-  careerPath.recommendations.forEach((r) => careerByCompany.set(r.company, r.matchRate / 100))
-
-  // 후보 회사 = 네트워크 ∪ 커리어 경로에 등장한 회사
-  const companies = new Set<string>([...netByCompany.keys(), ...careerByCompany.keys()])
+  // 후보 생성: 네트워크 ∪ 커리어 경로에 등장한 회사
+  const companies = new Set<string>([...netByCompany.keys(), ...graphByCompany.keys()])
 
   const scores: RecommendationScore[] = [...companies].map((company) => {
-    const networkProximity = netByCompany.get(company) ?? 0
-    const careerSimilarity = careerByCompany.get(company) ?? 0
-    // 서베이 적합도: 결정론적 기본치(0.55~0.92) — 실제로는 AnalysisResult.recommendations에서 유도
-    const surveyFit = Math.round((0.55 + rand() * 0.37) * 1000) / 1000
-    const finalScore =
-      surveyFit * weights.survey +
-      networkProximity * weights.network +
-      careerSimilarity * weights.career
-    return {
-      company,
-      surveyFit,
-      networkProximity: Math.round(networkProximity * 1000) / 1000,
-      careerSimilarity: Math.round(careerSimilarity * 1000) / 1000,
-      finalScore: Math.round(finalScore * 1000) / 1000,
-    }
+    const network = netByCompany.get(company) ?? 0
+    const graph = graphByCompany.get(company) ?? 0
+    // CBF: 콘텐츠 적합도 (스킬·연봉·경력·근무형태 매칭) — 회사별 결정론적 추정 0.55~0.92
+    const cbf = r3(0.55 + seededRand(seedFrom('cbf' + company + stage1.jobCategory))() * 0.37)
+    // CF: 협업 필터링 (유사 행동 유저) — 방법론상 가장 강한 신호, 0.62~0.96
+    const cf = r3(0.62 + seededRand(seedFrom('cf' + company + stage1.experienceYears))() * 0.34)
+    const finalScore = r3(
+      cbf * weights.cbf + cf * weights.cf + graph * weights.graph + network * weights.network
+    )
+    return { company, cbf, cf, graph: r3(graph), network: r3(network), finalScore }
   })
 
   return scores.sort((a, b) => b.finalScore - a.finalScore)
