@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Share2, FileText, MessageCircle, Sparkles, Heart } from 'lucide-react'
+import { ChevronLeft, Share2, Sparkles } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { toast } from 'sonner'
 import { FadeIn, SlideUp, ScaleIn } from '@/components/result/FadeIn'
@@ -15,7 +15,6 @@ import { AlertSignup } from '@/components/result/AlertSignup'
 import { LiveJobs } from '@/components/result/LiveJobs'
 import { SalaryBenchmark } from '@/components/result/SalaryBenchmark'
 import { ReadinessScore } from '@/components/result/ReadinessScore'
-import { ShareCard } from '@/components/result/ShareCard'
 import { CompanyInsightTeaser } from '@/components/result/CompanyInsightTeaser'
 import { NetworkSection } from '@/components/result/NetworkSection'
 import { loadPreferences } from '@/lib/preferences'
@@ -240,69 +239,9 @@ export default function ResultPage() {
           </FadeIn>
         )}
 
-        {/* ⑫b 공유 카드 */}
-        {stage1 && (
-          <SlideUp delay={0.45}>
-            <ShareCard result={result} stage1={stage1} />
-          </SlideUp>
-        )}
-
         {/* ⑬ 알림 신청 */}
         <FadeIn delay={0.48}>
           <AlertSignup stage1={stage1} />
-        </FadeIn>
-
-        {/* ⑮ 즐겨찾기 바로가기 */}
-        <FadeIn delay={0.52}>
-          <Link
-            href="/favorites"
-            className="flex items-center gap-3 bg-rose-50 border border-rose-100 rounded-2xl p-4"
-          >
-            <Heart size={18} className="text-rose-500 fill-rose-500 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-semibold text-gray-900 text-sm">관심 기업 보기</p>
-              <p className="text-xs text-gray-500 mt-0.5">하트 누른 기업들을 한 눈에</p>
-            </div>
-            <ChevronLeft size={16} className="rotate-180 text-rose-300" />
-          </Link>
-        </FadeIn>
-
-        {/* ⑯ 면접 질문 배너 */}
-        <FadeIn delay={0.5}>
-          <Link
-            href="/interview"
-            className="flex items-center gap-4 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-5 text-white active:opacity-80 transition-opacity"
-          >
-            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
-              <MessageCircle size={22} className="text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="font-black text-base">AI 면접 질문 예측</p>
-              <p className="text-purple-200 text-xs mt-0.5">
-                지원 기업군별 예상 질문 10개 + 답변 가이드
-              </p>
-            </div>
-            <ChevronLeft size={20} className="rotate-180 text-purple-300 flex-shrink-0" />
-          </Link>
-        </FadeIn>
-
-        {/* ⑮ 자기소개서 생성 배너 */}
-        <FadeIn delay={0.5}>
-          <Link
-            href="/cover-letter"
-            className="flex items-center gap-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 text-white active:opacity-80 transition-opacity"
-          >
-            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
-              <FileText size={22} className="text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="font-black text-base">AI 자기소개서 자동 작성</p>
-              <p className="text-indigo-200 text-xs mt-0.5">
-                분석 결과로 맞춤 자소서 4개 문항을 즉시 생성
-              </p>
-            </div>
-            <ChevronLeft size={20} className="rotate-180 text-indigo-300 flex-shrink-0" />
-          </Link>
         </FadeIn>
 
       </div>
