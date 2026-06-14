@@ -9,10 +9,23 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
-  PROVIDERS, providerMeta, addSource, toStage1, type Provider, type UnifiedProfile,
+  PROVIDERS, providerMeta, addSource, toStage1, buildUnifiedProfile,
+  type Provider, type UnifiedProfile,
 } from '@/lib/connect'
 import { getMockResult } from '@/lib/mock-result'
 import { buildSync, setStoredSync } from '@/lib/network'
+
+// base64url(UTF-8) → 객체
+function decodeProfile(b64url: string): UnifiedProfile | null {
+  try {
+    const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/')
+    const bin = atob(b64)
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0))
+    return JSON.parse(new TextDecoder().decode(bytes)) as UnifiedProfile
+  } catch {
+    return null
+  }
+}
 
 export function ConnectedProfile() {
   const router = useRouter()
@@ -20,9 +33,30 @@ export function ConnectedProfile() {
   const [adding, setAdding] = useState<Provider | null>(null)
 
   useEffect(() => {
-    const raw = sessionStorage.getItem('unifiedProfile')
-    if (!raw) { router.replace('/'); return }
-    try { setProfile(JSON.parse(raw)) } catch { router.replace('/') }
+    const params = new URLSearchParams(window.location.search)
+    const data = params.get('data')          // GitHub 실연동 콜백
+    const fallback = params.get('fallback')   // OAuth 미설정 시 더미 폴백
+
+    let p: UnifiedProfile | null = null
+    if (data) p = decodeProfile(data)
+    if (!p && fallback === 'github') p = buildUnifiedProfile('github')
+    if (!p) {
+      const raw = sessionStorage.getItem('unifiedProfile')
+      if (raw) { try { p = JSON.parse(raw) } catch { p = null } }
+    }
+    if (!p) { router.replace('/'); return }
+
+    // 외부 연동(콜백/폴백)으로 들어온 경우 세션에 표준 규격으로 적재
+    if (data || fallback) {
+      sessionStorage.setItem('unifiedProfile', JSON.stringify(p))
+      sessionStorage.setItem('stage1Data', JSON.stringify(toStage1(p)))
+      sessionStorage.setItem('stage2Data', '')
+      sessionStorage.setItem('skippedStage2', 'true')
+      sessionStorage.setItem('connectedProvider', p.sources.join(','))
+      setStoredSync(buildSync(toStage1(p)))
+      window.history.replaceState({}, '', '/connected')   // URL 정리
+    }
+    setProfile(p)
   }, [router])
 
   async function addProvider(provider: Provider) {

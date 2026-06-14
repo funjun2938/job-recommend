@@ -36,6 +36,14 @@ export function ConnectHero() {
 
   async function connect(provider: Provider) {
     if (loading) return
+
+    // GitHub은 실제 OAuth 연동 (env 없으면 라우트에서 더미로 폴백)
+    if (provider === 'github') {
+      setLoading('github')
+      window.location.href = '/api/connect/github'
+      return
+    }
+
     setLoading(provider)
 
     // 연동 지연 시뮬레이션
