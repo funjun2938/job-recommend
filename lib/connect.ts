@@ -73,58 +73,61 @@ interface ProviderData {
 }
 
 const DATA: Record<Provider, ProviderData> = {
+  // 금융 직군 예시 (비IT)
   linkedin: {
-    headline: 'Senior Product Manager @ 대기업',
+    headline: '재무팀 시니어 매니저 @ 대기업',
     canonical: {
-      jobCategory: '기획·PM',
+      jobCategory: '재무',
       seniority: '시니어',
       experienceYears: '5~7년',
-      currentCompany: '대기업 (IT 플랫폼)',
+      currentCompany: '대기업 (제조)',
       companySize: '대기업',
       salaryRange: '6~7천만원',
-      skills: ['프로덕트 기획', '데이터 분석', 'A/B 테스트', '애자일'],
-      careerPath: ['스타트업 PM', '중견 IT 기획', '대기업 PO'],
+      skills: ['재무기획', '자금관리', 'IR', '관리회계'],
+      careerPath: ['회계법인', '중견기업 재무', '대기업 재무'],
     },
-    networkReach: { connections: 842, companies: 31 },
+    networkReach: { connections: 642, companies: 28 },
     contribution: {
       summary: '경력과 직무, 인맥을 파악했어요',
       highlights: [
-        '시니어 프로덕트 매니저로 6.5년 경력',
-        '3개 회사를 거친 커리어 궤적',
-        '프로덕트·데이터 분석 등 검증된 스킬',
-        '업계 인맥 842명',
+        '대기업 재무 시니어로 6년 경력',
+        '회계법인 출신의 재무 커리어 궤적',
+        '재무기획·IR·자금관리 역량',
+        '업계 인맥 642명',
       ],
     },
     baseCompleteness: 88,
   },
+  // 마케팅 직군 예시 (비IT)
   remember: {
-    headline: '영업총괄 · B2B Sales Lead',
+    headline: '브랜드 마케팅 리드',
     canonical: {
-      jobCategory: '영업·BD',
+      jobCategory: '브랜드 마케팅',
       seniority: '리드',
       experienceYears: '7~10년',
-      currentCompany: '중견기업 (B2B SaaS)',
+      currentCompany: '중견기업 (소비재)',
       companySize: '중견기업',
       salaryRange: '7~8천만원',
-      skills: ['B2B 세일즈', '파트너십', '협상', '계정 관리'],
-      careerPath: ['스타트업 영업', '외국계 SaaS AE', '중견 영업총괄'],
+      skills: ['브랜드 전략', '캠페인 기획', 'IMC', 'CRM'],
+      careerPath: ['광고대행사 AE', '대기업 마케팅', '중견 브랜드 리드'],
     },
     networkReach: { connections: 1204, companies: 47 },
     contribution: {
       summary: '명함첩에서 커리어와 인맥을 찾았어요',
       highlights: [
-        '명함 직함 변화로 본 영업 리드 커리어',
+        '명함 직함 변화로 본 브랜드 마케팅 커리어',
         '명함첩 214장 · 47개 회사 인맥',
-        '토스·카카오·쿠팡에 인맥 밀집',
+        '소비재·광고 업계 인맥 밀집',
         '레퍼럴(지인 추천) 가능성 높은 회사 다수',
       ],
     },
     baseCompleteness: 92,
   },
+  // 개발 직군 예시 (GitHub은 본질상 개발)
   github: {
     headline: 'Backend-leaning Fullstack Engineer',
     canonical: {
-      jobCategory: '개발·엔지니어',
+      jobCategory: '백엔드 개발',
       seniority: '미들',
       experienceYears: '3~5년',
       currentCompany: '스타트업 (시리즈 B)',
