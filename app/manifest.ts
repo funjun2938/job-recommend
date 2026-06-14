@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: '이직추천 — AI 맞춤 이직처 분석',
-    short_name: '이직추천',
+    name: 'careerly — AI 맞춤 이직처 분석',
+    short_name: 'careerly',
     description: '현재 상황을 알려주면 AI가 맞춤 이직처와 채용공고를 추천해드립니다',
     start_url: '/',
     display: 'standalone',

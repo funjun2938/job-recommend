@@ -37,7 +37,7 @@ export default function DashboardPage() {
             <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
               <TrendingUp size={14} className="text-white" />
             </div>
-            <span className="font-bold text-gray-900 text-sm">이직추천</span>
+            <span className="font-bold text-gray-900 text-sm">careerly</span>
           </Link>
           <Link href="/settings" className="p-2 text-gray-400">
             <Settings size={18} />

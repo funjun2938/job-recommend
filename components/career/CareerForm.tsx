@@ -90,7 +90,7 @@ export function CareerForm() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pb-28">
       {/* 헤더 */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
+      <div className="sticky top-11 z-30 bg-white border-b border-gray-100">
         <div className="flex items-center gap-3 px-4 h-14">
           <Link href={addMode ? '/connected' : '/'} className="p-1 -ml-1 text-gray-400"><ChevronLeft size={22} /></Link>
           <span className="font-bold text-gray-900 text-sm">{addMode ? '직접 입력으로 보강' : '커리어 직접 입력'}</span>

@@ -1,7 +1,7 @@
 import { ConnectedProfile } from '@/components/connect/ConnectedProfile'
 
 export const metadata = {
-  title: '연동 결과 — 이직추천',
+  title: '연동 결과 — careerly',
   robots: { index: false, follow: false },
 }
 

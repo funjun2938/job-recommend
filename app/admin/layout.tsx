@@ -1,7 +1,7 @@
 import { AdminShell } from '@/components/admin/AdminShell'
 
 export const metadata = {
-  title: '관리자 콘솔 — 이직추천',
+  title: '관리자 콘솔 — careerly',
   robots: { index: false, follow: false },
 }
 

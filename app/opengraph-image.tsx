@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = '이직추천 — AI 맞춤 이직처 분석'
+export const alt = 'careerly — AI 맞춤 이직처 분석'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -31,7 +31,7 @@ export default function OgImage() {
           📈
         </div>
         <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 32, fontWeight: 700 }}>
-          이직추천
+          careerly
         </span>
       </div>
 

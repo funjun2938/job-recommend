@@ -3,6 +3,7 @@ import { Noto_Sans_KR } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Analytics } from '@/components/Analytics'
+import { AppBar } from '@/components/AppBar'
 import './globals.css'
 
 const notoSansKr = Noto_Sans_KR({
@@ -22,17 +23,17 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: '이직추천 — AI 맞춤 이직처 분석',
-  description: '현재 직무·연봉·회사 정보를 알려주면 맞춤 이직처와 실제 채용공고를 드려요.',
+  title: 'careerly — AI 맞춤 이직 추천',
+  description: '계정 연동 또는 직접 입력 한 번으로 맞춤 이직처와 실제 채용공고를 받아보세요.',
   openGraph: {
-    title: '이직추천 — AI 맞춤 이직처 분석',
-    description: '현황 입력 → 회사 정보 교환 → 맞춤 이직처 잠금 해제',
+    title: 'careerly — AI 맞춤 이직 추천',
+    description: '연동 한 번으로 맞춤 이직처를 추천받는 커리어 플랫폼',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: '이직추천 — AI 맞춤 이직처 분석',
-    description: '현황 입력 → 회사 정보 교환 → 맞춤 이직처 잠금 해제',
+    title: 'careerly — AI 맞춤 이직 추천',
+    description: '연동 한 번으로 맞춤 이직처를 추천받는 커리어 플랫폼',
   },
 }
 
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans antialiased min-h-screen bg-gradient-to-br from-indigo-100 via-slate-100 to-purple-100 dark:bg-none dark:bg-gray-950">
         <ThemeProvider>
           <div className="mx-auto w-full max-w-[430px] min-h-screen bg-white dark:bg-gray-900 shadow-2xl shadow-indigo-200/50 dark:shadow-indigo-900/30 relative overflow-x-hidden">
+            <AppBar />
             {children}
           </div>
           <Toaster richColors position="top-center" />

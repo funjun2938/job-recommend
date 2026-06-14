@@ -23,7 +23,7 @@ export default function AuthPage() {
           <TrendingUp size={24} className="text-white" />
         </div>
         <div>
-          <p className="font-black text-xl text-gray-900">이직추천</p>
+          <p className="font-black text-xl text-gray-900">careerly</p>
           <p className="text-xs text-gray-400">AI 맞춤 이직처 분석</p>
         </div>
       </div>

@@ -20,9 +20,9 @@ export async function POST(request: Request) {
   `).join('')
 
   const { error } = await resend.emails.send({
-    from:    '이직추천 <alert@jobsuggest.co>',
+    from:    'careerly <alert@jobsuggest.co>',
     to:      email,
-    subject: `[이직추천] ${jobCategory} 신규 채용공고 ${jobs.length}건`,
+    subject: `[careerly] ${jobCategory} 신규 채용공고 ${jobs.length}건`,
     html: `
     <!DOCTYPE html>
     <html lang="ko">
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.07);">
         <!-- 헤더 -->
         <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:28px 24px;text-align:center;">
-          <p style="margin:0;color:rgba(255,255,255,.8);font-size:13px;">이직추천</p>
+          <p style="margin:0;color:rgba(255,255,255,.8);font-size:13px;">careerly</p>
           <h1 style="margin:8px 0 0;color:#fff;font-size:22px;font-weight:900;">${jobCategory} 신규 공고</h1>
           <p style="margin:6px 0 0;color:rgba(255,255,255,.7);font-size:13px;">${jobs.length}개의 맞춤 공고가 올라왔어요</p>
         </div>

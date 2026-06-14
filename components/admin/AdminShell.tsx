@@ -37,7 +37,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white font-black text-sm">J</div>
           <div>
-            <p className="font-black text-gray-900 text-sm leading-tight">이직추천 Admin</p>
+            <p className="font-black text-gray-900 text-sm leading-tight">careerly Admin</p>
             <p className="text-[11px] text-gray-400">9 도메인 · {TOTAL_TABLES} 테이블</p>
           </div>
         </div>

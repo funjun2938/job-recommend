@@ -90,7 +90,7 @@ export default function ResultPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* 헤더 */}
-      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
+      <div className="sticky top-11 z-40 bg-white/90 backdrop-blur border-b border-gray-100">
         <div className="flex items-center justify-between px-4 h-14">
           <button onClick={() => router.back()} className="p-2 -ml-2 text-gray-400 active:text-gray-700">
             <ChevronLeft size={22} />

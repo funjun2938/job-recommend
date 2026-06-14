@@ -20,10 +20,10 @@ async function fetchResult(id: string) {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
   const data = await fetchResult(id)
-  if (!data) return { title: '결과를 찾을 수 없어요 — 이직추천' }
+  if (!data) return { title: '결과를 찾을 수 없어요 — careerly' }
 
   return {
-    title: `${data.stage1.jobCategory} ${data.result.directionType} 분석 — 이직추천`,
+    title: `${data.stage1.jobCategory} ${data.result.directionType} 분석 — careerly`,
     description: data.result.diagnosis?.slice(0, 120),
     openGraph: {
       title: `${data.stage1.jobCategory} 이직 분석 결과`,

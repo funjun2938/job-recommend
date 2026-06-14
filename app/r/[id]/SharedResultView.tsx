@@ -28,7 +28,7 @@ export function SharedResultView({ result, stage1, createdAt }: Props) {
       {/* 헤더 */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 space-y-3">
         <div className="flex items-center justify-between">
-          <Link href="/" className="font-bold text-indigo-600 text-base">이직추천</Link>
+          <Link href="/" className="font-bold text-indigo-600 text-base">careerly</Link>
           <span className="text-xs bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full font-semibold">
             공유된 결과
           </span>

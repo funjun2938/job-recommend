@@ -67,15 +67,9 @@ export function ConnectHero() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white px-6 pt-16 pb-10">
-      {/* 로고 */}
-      <div className="flex items-center gap-2 mb-auto">
-        <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm">J</div>
-        <span className="font-bold text-gray-900">이직추천</span>
-      </div>
-
+    <div className="min-h-[calc(100vh-44px)] flex flex-col bg-white px-6 pt-10 pb-10">
       {/* 메인 카피 — 짧게 */}
-      <div className="space-y-3 mt-10">
+      <div className="space-y-3">
         <div className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-600 text-xs font-bold px-3 py-1.5 rounded-full">
           <Sparkles size={12} /> 원클릭 이직 추천
         </div>
